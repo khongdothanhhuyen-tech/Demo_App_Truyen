@@ -144,7 +144,7 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
     }
-
+//    AVCCC
     private final Runnable sliderRunnable = new Runnable() {
         @Override
         public void run() {
