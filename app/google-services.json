@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "448465182444",
+    "project_id": "apptruyen-c75c4",
+    "storage_bucket": "apptruyen-c75c4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:448465182444:android:e647796d3e109409090fc9",
+        "android_client_info": {
+          "package_name": "com.example.app_truyen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8RSCTlI93Y2K727htZ4242gvPw2s28Gk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/gray_background"
+    android:orientation="vertical"
+    tools:ignore="HardcodedText">
+
+    <TextView
+        android:id="@+id/tvEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="15dp"
+        android:text="Sửa"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        android:textSize="@dimen/font_size_medium"
+        />
+    <TextView
+        android:id="@+id/tvDelete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="15dp"
+        android:text="Xóa"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        android:textSize="@dimen/font_size_medium" />
+    <TextView
+        android:id="@+id/tvAddChapter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="15dp"
+        android:text="Thêm chương truyện mới"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        android:textSize="@dimen/font_size_medium" />
+</LinearLayout>

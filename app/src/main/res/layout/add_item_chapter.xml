@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/gray_background"
+    android:orientation="vertical"
+    android:padding="20dp"
+    tools:ignore = "HardcodedText">
+
+    <TextView
+        android:layout_marginTop="50dp"
+        android:id="@+id/tvBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:text="Quay lại"
+        android:textSize="@dimen/font_size_medium"
+        android:textColor="@color/orange"
+        android:textStyle="bold"
+        android:drawablePadding="5dp" />
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="20dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:hintEnabled="false"
+
+        app:boxBackgroundColor="@color/gray_background"
+        app:boxStrokeColor="@color/custom_text_input_color"
+        app:boxCornerRadiusTopStart="30dp"
+        app:boxCornerRadiusTopEnd="30dp"
+        app:boxCornerRadiusBottomStart="30dp"
+        app:boxCornerRadiusBottomEnd="30dp">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edtMaChuong"
+            android:textSize="@dimen/font_size_medium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textEmailAddress"
+            android:textColor="@color/white"
+            android:hint="Nhập mã chương"
+            android:textColorHint="@color/gray_text" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_marginBottom="20dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:hintEnabled="false"
+
+        app:boxBackgroundColor="@color/gray_background"
+        app:boxStrokeColor="@color/custom_text_input_color"
+        app:boxCornerRadiusTopStart="30dp"
+        app:boxCornerRadiusTopEnd="30dp"
+        app:boxCornerRadiusBottomStart="30dp"
+        app:boxCornerRadiusBottomEnd="30dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edtTenChuong"
+            android:textSize="@dimen/font_size_medium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textEmailAddress"
+            android:textColor="@color/white"
+            android:hint="Nhập tên chương"
+            android:textColorHint="@color/gray_text" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <Button
+        android:id="@+id/btnChonAnhChuong"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Chọn ảnh chương"
+        android:backgroundTint="@color/orange"
+        android:textColor="@color/white"/>
+    <LinearLayout
+        android:layout_marginTop="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        tools:ignore="ButtonStyle">
+        <Button
+            android:id="@+id/btnSaveChapter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lưu "
+            android:backgroundTint="@color/orange"
+            android:textColor="@color/white"
+            android:layout_marginEnd="10dp"
+            android:layout_weight="1" />
+        <Button
+            android:id="@+id/btnCancelChapter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hủy "
+            android:backgroundTint="@color/orange"
+            android:textColor="@color/white"
+            android:layout_weight="1" />
+    </LinearLayout>
+    <ProgressBar
+        android:layout_marginTop="20dp"
+        android:layout_gravity="center"
+        android:id="@+id/progressBarChapter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+</LinearLayout>

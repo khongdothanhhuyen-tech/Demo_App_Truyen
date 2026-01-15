@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:background="@color/app_background"
+    tools:ignore="HardcodedText">
+    <TextView
+        android:id="@+id/tvBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginTop="60dp"
+        android:layout_marginEnd="20dp"
+        android:text="Quay lại"
+        android:textSize="@dimen/font_size_medium"
+        android:textColor="@color/orange"
+        android:textStyle="bold" />
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="50dp"
+        app:cardCornerRadius="16dp"
+        app:strokeColor="@color/white_transparent"
+        app:strokeWidth="0.5dp">
+        <ImageView
+            android:id="@+id/imgBanner"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/app_icon"
+            android:scaleType="centerCrop"
+            tools:ignore="ContentDescription"/>
+    </com.google.android.material.card.MaterialCardView>
+    <TextView
+        android:layout_marginTop="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Đăng nhập App truyện"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        android:textSize="@dimen/font_size_large"
+        android:gravity="center"/>
+    <TextView
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tận hưởng chọn vẹn các tính năng hấp dẫn"
+        android:textColor="@color/gray_text"
+        android:textSize="@dimen/font_size_medium"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="20dp"
+        android:layout_margin="20dp"
+        android:background="@drawable/custom_corners"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Thông tin đăng nhập"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:textSize="@dimen/font_size_medium"
+            android:layout_marginBottom="20dp"/>
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Email"
+            app:hintTextColor="@color/gray_text"
+            android:textColorHint="@color/gray_text"
+
+            app:boxBackgroundColor="@color/gray_background_transparent"
+            app:boxStrokeColor="@color/custom_text_input_color"
+            app:startIconDrawable="@drawable/ic_email"
+            app:startIconTint="@color/orange"
+
+            app:boxCornerRadiusTopStart="30dp"
+            app:boxCornerRadiusTopEnd="30dp"
+            app:boxCornerRadiusBottomStart="30dp"
+            app:boxCornerRadiusBottomEnd="30dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textEmailAddress"
+                android:textColor="@color/white" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Mật khẩu "
+
+            app:hintTextColor="@color/gray_text"
+            android:textColorHint="@color/gray_text"
+            app:boxBackgroundColor="@color/gray_background_transparent"
+            app:boxStrokeColor="@color/custom_text_input_color"
+
+            app:startIconDrawable="@drawable/ic_lock"
+            app:startIconTint="@color/orange"
+            app:endIconMode="password_toggle"
+            app:endIconTint="@color/gray_text"
+
+            app:boxCornerRadiusTopStart="30dp"
+            app:boxCornerRadiusTopEnd="30dp"
+            app:boxCornerRadiusBottomStart="30dp"
+            app:boxCornerRadiusBottomEnd="30dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:textColor="@color/white" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <TextView
+            android:id="@+id/tvForgotPassword"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Quên mật khẩu?"
+            android:textColor="@color/orange"
+            android:layout_gravity="end"/>
+        <Button
+            android:id="@+id/btnLogin"
+            android:layout_marginTop="25dp"
+            android:layout_marginBottom="5dp"
+            android:padding="15dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/orange"
+            android:text="Đăng nhập"
+            android:textSize="@dimen/font_size_medium"
+            android:textColor="@color/white"/>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp">
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:background="@color/gray_text_transparent" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:text="hoặc"
+            android:textColor="@color/gray_text"
+            android:textSize="14sp" />
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:background="@color/gray_text_transparent" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_marginTop="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="center">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Bạn chưa có tài khoản? "
+            android:textColor="@color/gray_text"
+            android:textSize="@dimen/font_size_medium"/>
+        <TextView
+            android:id="@+id/tvSignUpNow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Đăng ký ngay "
+            android:textColor="@color/orange"
+            android:textStyle="bold"
+            android:textSize="@dimen/font_size_medium" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_margin="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="20dp"
+        android:text="Bằng cách đăng nhập , bạn đồng ý với điều khoản và chính sách của App truyện"
+        android:textColor="@color/gray_text"
+        android:textSize="@dimen/font_size_small"
+        android:background="@drawable/custom_corners"/>
+</LinearLayout>

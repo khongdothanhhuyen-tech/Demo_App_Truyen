@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="app_background">#090909</color>
+
+    <color name="gray_background">#1E1E1E</color>
+    <color name="gray_background_transparent">#E61E1E1E</color>
+
+    <color name="gray_text">#BDBDBD</color>
+    <color name="gray_text_transparent">#333333</color>
+
+    <color name="orange">#F4513E</color>
+    <color name="white_transparent">#80FFFFFF</color>
+    <color name="searchView_background">#1E1E1E</color>
+    <color name="hint_text">#9E9E9E</color>
+    <color name="orange_light_transparent">#33F4513E</color>
+</resources>

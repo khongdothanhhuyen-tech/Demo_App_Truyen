@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="customImg" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">10dp</item>
+    </style>
+    <style name="CustomChoiceChip" parent="Widget.MaterialComponents.Chip.Choice">
+        <item name="android:textAppearance">@style/TextAppearance.MaterialComponents.Chip</item>
+        <item name="chipMinHeight">40dp</item>
+        <item name="chipCornerRadius">20dp</item>
+        <item name="checkedIcon">@drawable/ic_check</item>
+        <item name="checkedIconTint">@color/white</item>
+        <item name="checkedIconEnabled">true</item>
+        <item name="iconStartPadding">0dp</item>
+        <item name="iconEndPadding">0dp</item>
+    </style>
+</resources>
