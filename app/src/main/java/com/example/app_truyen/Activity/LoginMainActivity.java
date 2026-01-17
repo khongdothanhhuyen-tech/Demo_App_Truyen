@@ -69,7 +69,11 @@ public class LoginMainActivity extends AppCompatActivity {
             startActivity(intentRegister);
             finish();
         });
-
+        tvForgotPassword.setOnClickListener(v -> {
+            Intent intentForgotPassword = new Intent(LoginMainActivity.this, ForgotPasswordActivity.class);
+            startActivity(intentForgotPassword);
+            finish();
+        });
 
         //Kiểm tra nếu vừa đăng kí sẽ hiển thị luôn thông tin đăng kí
         Intent intent = getIntent();
