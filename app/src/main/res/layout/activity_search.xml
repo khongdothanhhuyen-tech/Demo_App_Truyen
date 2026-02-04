@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/gray_background"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingEnd="20dp"
+        android:paddingStart="1dp"
+        android:layout_marginTop="30dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:icon="@drawable/ic_back2"
+            app:iconTint="@color/white"
+            style="@style/Widget.Material3.Button.IconButton" />
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/searchView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:queryHint="Nhập từ khóa để tìm kiếm truyện"
+            app:closeIcon="@drawable/ic_close"
+            app:searchIcon="@drawable/ic_search"
+            android:background="@drawable/searchview_background"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="20dp"
+        android:orientation="vertical"
+        tools:ignore = "HardcodedText">
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp" >
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginTop="10dp"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:text="Gần đây"
+                android:textColor="@color/white"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnChinhSua"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:layout_weight="1"
+                android:text="Chỉnh sửa"
+                android:textColor="@color/orange"
+                android:textAllCaps="false"
+                android:textSize="15sp"
+                app:cornerRadius="25dp"
+                style="@style/Widget.Material3.Button.TextButton" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <com.google.android.flexbox.FlexboxLayout
+            android:id="@+id/history_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:flexWrap="wrap" />
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#0DFFFFFF"
+            android:layout_marginTop="30dp"
+            android:layout_marginBottom="30dp" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvHienThi"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </LinearLayout>
+</LinearLayout>
+

@@ -50,9 +50,14 @@ public class HomeActivity extends AppCompatActivity {
         nestedScrollView = findViewById(R.id.nestedScrollView);
         ImageView imgSearch = findViewById(R.id.imgSearch);
 
+        imgSearch.setOnClickListener(v -> {
+            startActivity(new Intent(HomeActivity.this, SearchActivity.class));
+            finish();
+        });
 
         setupBannerSlider();
         setupAllRecyclerViews();
+        setupBottomNavigation();
     }
     // Hàm cài đặt RecycleView
     private void setupAllRecyclerViews() {
@@ -144,7 +149,6 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
     }
-//    AVCCC
     private final Runnable sliderRunnable = new Runnable() {
         @Override
         public void run() {
@@ -155,5 +159,29 @@ public class HomeActivity extends AppCompatActivity {
             viewPagerBanner.setCurrentItem(nextItem, true);
         }
     };
+    private void setupBottomNavigation() {
+        BottomNavigationView bottomNavigationView = findViewById(R.id.nav);
+        bottomNavigationView.setSelectedItemId(R.id.nav_home);
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_home) {
+                if (nestedScrollView != null) nestedScrollView.smoothScrollTo(0, 0);
+                return true;
+            } else if (id == R.id.nav_comic) {
+//                startActivity(new Intent(HomeActivity.this, ComicActivity.class));
+//                overridePendingTransition(0, 0); // Tắt hiệu ứng chuyển trang
+//                return true;
+            } else if (id == R.id.nav_library) {
+//                startActivity(new Intent(HomeActivity.this, LibraryActivity.class));
+//                overridePendingTransition(0, 0);
+//                return true;
+            } else if (id == R.id.nav_profile) {
+//                startActivity(new Intent(HomeActivity.this, ProfileActivity.class));
+//                overridePendingTransition(0, 0);
+//                return true;
+            }
+            return false;
+        });
+    }
 }
 

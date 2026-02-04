@@ -52,7 +52,10 @@
             android:name=".Activity.AddEditStoryActivity"
             android:exported="false">
         </activity>
-
+        <activity
+            android:name=".Activity.SearchActivity"
+            android:exported="false">
+        </activity>
     </application>
 
 </manifest>
