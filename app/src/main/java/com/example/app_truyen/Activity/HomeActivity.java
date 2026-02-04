@@ -176,9 +176,9 @@ public class HomeActivity extends AppCompatActivity {
                 overridePendingTransition(0, 0);
                 return true;
             } else if (id == R.id.nav_profile) {
-//                startActivity(new Intent(HomeActivity.this, ProfileActivity.class));
-//                overridePendingTransition(0, 0);
-//                return true;
+                startActivity(new Intent(HomeActivity.this, ProfileActivity.class));
+                overridePendingTransition(0, 0);
+                return true;
             }
             return false;
         });
