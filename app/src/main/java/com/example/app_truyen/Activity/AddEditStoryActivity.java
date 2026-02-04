@@ -153,7 +153,6 @@ public class AddEditStoryActivity extends AppCompatActivity {
             edtMaTruyen.setEnabled(true);
         }
     }
-
     // Hàm hiển thị dialog chọn thể loại
     private void showGenreDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -182,7 +181,6 @@ public class AddEditStoryActivity extends AppCompatActivity {
             saveDataToFirestore(imageUrl);
         }
     }
-
     // Hàm upload ảnh lên Cloudinary
     private void uploadImageToCloudinary(Uri imageUri) {
         try {
