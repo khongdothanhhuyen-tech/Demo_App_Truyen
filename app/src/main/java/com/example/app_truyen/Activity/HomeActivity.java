@@ -168,9 +168,9 @@ public class HomeActivity extends AppCompatActivity {
                 if (nestedScrollView != null) nestedScrollView.smoothScrollTo(0, 0);
                 return true;
             } else if (id == R.id.nav_comic) {
-//                startActivity(new Intent(HomeActivity.this, ComicActivity.class));
-//                overridePendingTransition(0, 0); // Tắt hiệu ứng chuyển trang
-//                return true;
+                startActivity(new Intent(HomeActivity.this, ComicActivity.class));
+                overridePendingTransition(0, 0); // Tắt hiệu ứng chuyển trang
+                return true;
             } else if (id == R.id.nav_library) {
                 startActivity(new Intent(HomeActivity.this, LibraryActivity.class));
                 overridePendingTransition(0, 0);
