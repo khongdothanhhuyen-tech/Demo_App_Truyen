@@ -15,7 +15,9 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.app_truyen.Activity.AddChapterActivity;
 import com.example.app_truyen.Activity.AddEditStoryActivity;
+import com.example.app_truyen.Activity.StoryDetailActivity;
 import com.example.app_truyen.Models.Story;
 import com.example.app_truyen.R;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -87,6 +89,14 @@ public class AdapterStoryHori extends RecyclerView.Adapter<AdapterStoryHori.Stor
         } else {
             holder.itemView.setOnLongClickListener(null);
         }
+
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, StoryDetailActivity.class);
+            intent.putExtra("TRUYEN_DATA", story);
+            context.startActivity(intent);
+
+            addToHistory(story);
+        });
     }
 
     // Hàm thêm lịch sử đọc
@@ -120,6 +130,7 @@ public class AdapterStoryHori extends RecyclerView.Adapter<AdapterStoryHori.Stor
 
         TextView tvEdit = sheetView.findViewById(R.id.tvEdit);
         TextView tvDelete = sheetView.findViewById(R.id.tvDelete);
+        TextView tvAddChapter = sheetView.findViewById(R.id.tvAddChapter);
 
         // Sửa
         tvEdit.setOnClickListener(v -> {
@@ -139,6 +150,15 @@ public class AdapterStoryHori extends RecyclerView.Adapter<AdapterStoryHori.Stor
                     .setNegativeButton("Hủy", null)
                     .show();
         });
+
+        // Thêm chương
+        tvAddChapter.setOnClickListener(v -> {
+            bottomSheetDialog.dismiss();
+            Intent intent = new Intent(context, AddChapterActivity.class);
+            intent.putExtra("MA_TRUYEN", story.getMaTruyen());
+            context.startActivity(intent);
+        });
+        bottomSheetDialog.show();
     }
     // Hàm xóa dữ liêu ở Firestore
     private void deleteStoryFromFirestore(Story story, int position) {

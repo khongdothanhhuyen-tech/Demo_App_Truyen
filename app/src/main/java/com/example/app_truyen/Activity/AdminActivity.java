@@ -2,7 +2,9 @@ package com.example.app_truyen.Activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,8 +21,8 @@ public class AdminActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private ArrayList<Story> dsTruyen;
     private AdapterStoryHori adapterStoryHori;
+    private ProgressBar progressBar;
 
-    private static final int MANAGE_STORY_REQUEST_CODE = 100;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,6 +31,7 @@ public class AdminActivity extends AppCompatActivity {
         Button btnAddStory = findViewById(R.id.btnAddStory);
         RecyclerView rvStory = findViewById(R.id.rvStory);
 
+        progressBar = findViewById(R.id.progressBar);
         db = FirebaseFirestore.getInstance();
         dsTruyen = new ArrayList<>();
         adapterStoryHori = new AdapterStoryHori(this, dsTruyen , true);
@@ -40,14 +43,16 @@ public class AdminActivity extends AppCompatActivity {
 
         btnAddStory.setOnClickListener(v -> {
             Intent intent = new Intent(AdminActivity.this, AddEditStoryActivity.class);
-            startActivityForResult(intent, MANAGE_STORY_REQUEST_CODE);
+            startActivity(intent);
         });
 
     }
     // Hàm lấy dữ liệu từ Firestore
     private void fetchDataFromFirestore() {
+        progressBar.setVisibility(View.VISIBLE);
         db.collection("Truyen")
                 .get().addOnCompleteListener(task -> {
+                    progressBar.setVisibility(View.GONE);
                     if (task.isSuccessful()) {
                         dsTruyen.clear();
                         for (QueryDocumentSnapshot document : task.getResult()) {
@@ -62,12 +67,8 @@ public class AdminActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == MANAGE_STORY_REQUEST_CODE && resultCode == RESULT_OK) {
-            Toast.makeText(this, "Đang cập nhật danh sách...", Toast.LENGTH_SHORT).show();
-            fetchDataFromFirestore();
-        }
+    protected void onResume() {
+        super.onResume();
+        fetchDataFromFirestore();
     }
-
 }
