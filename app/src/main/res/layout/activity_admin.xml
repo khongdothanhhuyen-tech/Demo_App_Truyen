@@ -1,29 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools"
     android:background="@color/gray_background"
-    android:orientation="vertical"
-    tools:ignore ="HardcodedText">
-    <Button
-        android:id="@+id/btnAddStory"
+    tools:ignore="HardcodedText">
+    <LinearLayout
+        android:id="@+id/topLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="@color/orange"
-        android:text="Thêm truyện"
-        android:layout_margin="20dp"
-        android:textColor="@color/white"/>
-    <View
-        android:layout_margin="10dp"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#F5F5F5"
-        android:layout_marginTop="30dp"
-        android:layout_marginBottom="30dp" />
-    <androidx.recyclerview.widget.RecyclerView
-        android:layout_marginTop="30dp"
-        android:id="@+id/rvStory"
+        android:orientation="vertical"
+        tools:ignore="UselessParent">
+        <Button
+            android:id="@+id/btnAddStory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/orange"
+            android:text="Thêm truyện"
+            android:layout_margin="20dp"
+            android:textColor="@color/white"/>
+        <View
+            android:layout_margin="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F5F5F5"
+            android:layout_marginTop="30dp"
+            android:layout_marginBottom="30dp" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:layout_marginTop="30dp"
+            android:id="@+id/rvStory"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"/>
+    </LinearLayout>
+    <ProgressBar
+        android:id="@+id/progressBar"
         android:layout_width="wrap_content"
-        android:layout_height="match_parent"/>
-</LinearLayout>
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:visibility="gone" />
+</RelativeLayout>

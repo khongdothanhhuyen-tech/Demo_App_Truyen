@@ -13,6 +13,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 
 import com.bumptech.glide.Glide;
+import com.example.app_truyen.Activity.StoryDetailActivity;
 import com.example.app_truyen.Models.Story;
 import com.example.app_truyen.R;
 
@@ -68,6 +69,12 @@ public class AdapterStoryVerti extends RecyclerView.Adapter<AdapterStoryVerti.Tr
         } else {
             holder.imgAnhBia.setImageResource(R.drawable.opm);
         }
+
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, StoryDetailActivity.class);
+            intent.putExtra("TRUYEN_DATA", truyen);
+            context.startActivity(intent);
+        });
     }
 
     @Override

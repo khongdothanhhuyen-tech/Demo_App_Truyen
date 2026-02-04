@@ -41,7 +41,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         btnSent.setOnClickListener(v -> {
             String email = edtEmail.getText().toString().trim();
             if (email.isEmpty()) {
-                Toast.makeText(ForgotPasswordActivity.this, "Vui lòng nhập email!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(ForgotPasswordActivity.this, "Vui lòng nhập địa chỉ email!", Toast.LENGTH_SHORT).show();
                 return;
             }
             if (!isValidEmail(email)) {

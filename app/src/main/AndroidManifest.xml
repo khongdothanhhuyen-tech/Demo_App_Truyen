@@ -17,33 +17,32 @@
         android:theme="@style/Theme.App_Truyen">
 
         <activity
+            android:name=".Activity.StoryDetailActivity"
+            android:exported="false" />
+        <activity
             android:name=".Activity.LoginAltActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
-            android:name=".Activity.ForgotPasswordActivity"
-            android:exported="false">
-        </activity>
-        <activity
             android:name=".Activity.LoginMainActivity"
             android:exported="false">
-
         </activity>
         <activity
             android:name=".Activity.SignUpActivity"
             android:exported="false">
-
         </activity>
         <activity
             android:name=".Activity.HomeActivity"
             android:exported="false">
         </activity>
-
+        <activity
+            android:name=".Activity.ForgotPasswordActivity"
+            android:exported="false">
+        </activity>
         <activity
             android:name=".Activity.AdminActivity"
             android:exported="false">
@@ -56,10 +55,20 @@
             android:name=".Activity.SearchActivity"
             android:exported="false">
         </activity>
+
+        <activity
+            android:name=".Activity.AddChapterActivity"
+            android:exported="false">
+        </activity>
+        <activity
+            android:name=".Activity.ReadActivity"
+            android:exported="false">
+        </activity>
         <activity
             android:name=".Activity.LibraryActivity"
             android:exported="false">
         </activity>
+
     </application>
 
 </manifest>
