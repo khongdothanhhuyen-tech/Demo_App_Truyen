@@ -93,9 +93,9 @@ public class LibraryActivity extends AppCompatActivity {
                 startActivity(intentHome);
             }
             else if (id == R.id.nav_comic) {
-//                Intent intentComic = new Intent(LibraryActivity.this, ComicActivity.class);
-//                startActivity(intentComic);
-//                return true;
+                Intent intentComic = new Intent(LibraryActivity.this, ComicActivity.class);
+                startActivity(intentComic);
+                return true;
             }
             else if (id == R.id.nav_library) {
                 NestedScrollView scrollView = findViewById(R.id.nestedScrollView);
@@ -105,9 +105,9 @@ public class LibraryActivity extends AppCompatActivity {
                 return true;
             }
             else if (id == R.id.nav_profile) {
-//                Intent intentProfile = new Intent(LibraryActivity.this, ProfileActivity.class);
-//                startActivity(intentProfile);
-//                return true;
+                Intent intentProfile = new Intent(LibraryActivity.this, ProfileActivity.class);
+                startActivity(intentProfile);
+                return true;
             }
             return false;
         });

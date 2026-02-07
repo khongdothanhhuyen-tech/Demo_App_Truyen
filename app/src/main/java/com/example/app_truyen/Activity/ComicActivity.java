@@ -185,8 +185,8 @@ public class ComicActivity extends AppCompatActivity {
                 startActivity(new Intent(ComicActivity.this, LibraryActivity.class));
                 return true;
             }else if (id == R.id.nav_profile) {
-//                startActivity(new Intent(ComicActivity.this, ProfileActivity.class));
-//                return true;
+                startActivity(new Intent(ComicActivity.this, ProfileActivity.class));
+                return true;
             }
             return false;
         });
