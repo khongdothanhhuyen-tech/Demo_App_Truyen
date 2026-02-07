@@ -58,7 +58,7 @@ public class SearchActivity extends AppCompatActivity {
         });
         btnChinhSua.setOnClickListener(v -> {
             isEditMode = !isEditMode;
-            updateHistoryUI();
+            refreshHistoryLayout();
         });
 
         setupSearchView();
@@ -147,9 +147,6 @@ public class SearchActivity extends AppCompatActivity {
             historyContainer.addView(historyView);    
         }
     }
-
-    // Hàm cập nhật UI khi bấm nút "Chỉnh sửa/Xong"
-    private void updateHistoryUI() {refreshHistoryLayout();}
 
     //Hàm tìm kiếm truyện
     private void searchStories(String query) {
