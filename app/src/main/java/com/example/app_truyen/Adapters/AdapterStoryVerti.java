@@ -43,10 +43,7 @@ public class AdapterStoryVerti extends RecyclerView.Adapter<AdapterStoryVerti.Tr
     @Override
     public TruyenViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(context).inflate(R.layout.item_story_vertical, parent, false);
-        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        Display display = windowManager.getDefaultDisplay();
-        int screenWidth = display.getWidth();
-
+        int screenWidth = context.getResources().getDisplayMetrics().widthPixels;
         ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
         layoutParams.width = screenWidth / 3;
         view.setLayoutParams(layoutParams);
