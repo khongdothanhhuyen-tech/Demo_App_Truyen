@@ -22,17 +22,12 @@ import java.util.List;
 import java.util.UUID;
 
 public class CommentActivity extends AppCompatActivity {
-
-    private RecyclerView rvComment;
     private EditText edtComment;
-    private ImageView btnSend;
     private AdapterComment adapter;
     private List<Comment> listComments;
     private FirebaseFirestore db;
     private FirebaseAuth auth;
     private String storyId;
-
-    private boolean isAdmin = false;
     private String currentUserId;
     private String currentUserAvatarUrl = "";
     private String currentUserName = "User";
@@ -42,9 +37,9 @@ public class CommentActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_comment);
 
-        rvComment = findViewById(R.id.rv_Comment);
+        RecyclerView rvComment = findViewById(R.id.rv_Comment);
         edtComment = findViewById(R.id.edtComment);
-        btnSend = findViewById(R.id.btnSend);
+        ImageView btnSend = findViewById(R.id.btnSend);
 
         storyId = getIntent().getStringExtra("MA_TRUYEN");
         if (storyId == null) {
@@ -58,27 +53,23 @@ public class CommentActivity extends AppCompatActivity {
         FirebaseUser user = auth.getCurrentUser();
         if (user != null) {
             currentUserId = user.getUid();
+            fetchCurrentUserInfo();
         }
 
         listComments = new ArrayList<>();
         rvComment.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new AdapterComment(this, listComments, isAdmin, currentUserId, storyId);
+        adapter = new AdapterComment(this, listComments, currentUserId, storyId);
         rvComment.setAdapter(adapter);
 
-        if (user != null) {
-            fetchCurrentUserInfo();
-            checkUserRole();
-        }
-
         loadComments();
-
         btnSend.setOnClickListener(v -> postComment());
     }
 
-    //Xử lý tên người dùng
+    //Hàm lấy thông tin người dùng để hiển thị
     private void fetchCurrentUserInfo() {
         if (currentUserId == null) return;
-        db.collection("TaiKhoan").document(currentUserId).get()
+        db.collection("TaiKhoan").document(currentUserId)
+                .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
                         currentUserAvatarUrl = documentSnapshot.getString("avatarUrl");
@@ -89,56 +80,21 @@ public class CommentActivity extends AppCompatActivity {
                     }
                 });
     }
-
-    private void checkUserRole() {
-        if (currentUserId == null) return;
-
-        db.collection("TaiKhoan").document(currentUserId)
-                .get().addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        String role = documentSnapshot.getString("role");
-                        isAdmin = "admin".equals(role);
-
-                        // Nếu là Admin, cập nhật lại Adapter để hiện chức năng xóa
-                        if (isAdmin && adapter != null) {
-                            adapter = new AdapterComment(this, listComments, true, currentUserId, storyId);
-                            rvComment.setAdapter(adapter);
-                        }
-                    }
-                });
-    }
-
+    // Hàm gửi bình luận
     private void postComment() {
         String content = edtComment.getText().toString().trim();
         if (content.isEmpty()) return;
 
-        if (auth.getCurrentUser() == null) {
-            Toast.makeText(this, "Bạn cần đăng nhập!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Tạo ID ngẫu nhiên
         String commentId = UUID.randomUUID().toString();
+        Comment newCmt = new Comment(commentId, currentUserId, currentUserName, currentUserAvatarUrl, content, new ArrayList<>(),Timestamp.now());
 
-        // Tạo đối tượng Comment (Sử dụng thông tin đã cache ở fetchCurrentUserInfo)
-        Comment newComment = new Comment(
-                commentId,
-                currentUserId,
-                currentUserName,        // Dùng biến đã lưu
-                currentUserAvatarUrl,   // Dùng biến đã lưu
-                content,
-                new ArrayList<>(),      // QUAN TRỌNG: Khởi tạo list like rỗng
-                Timestamp.now()
-        );
-
-        // Gửi lên Firestore
         db.collection("Truyen").document(storyId)
                 .collection("BinhLuan").document(commentId)
-                .set(newComment)
+                .set(newCmt)
                 .addOnSuccessListener(aVoid -> {
                     edtComment.setText("");
                     Toast.makeText(this, "Đã gửi!", Toast.LENGTH_SHORT).show();
-                    loadComments(); // Load lại danh sách
+                    loadComments();
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Gửi thất bại: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -153,8 +109,6 @@ public class CommentActivity extends AppCompatActivity {
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     listComments.clear();
                     for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                        // Firebase sẽ tự map dữ liệu vào class Comment
-                        // Nhớ đảm bảo class Comment có Constructor rỗng và Getter/Setter đầy đủ
                         Comment cmt = doc.toObject(Comment.class);
                         listComments.add(cmt);
                     }

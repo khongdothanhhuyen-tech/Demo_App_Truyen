@@ -55,7 +55,6 @@ public class Comment {
     public void setDanhSachLikes(List<String> danhSachLikes) {
         this.danhSachLikes = danhSachLikes;
     }
-
     public int getSoLuotThich() {
         if (danhSachLikes == null) return 0;
         return danhSachLikes.size();
