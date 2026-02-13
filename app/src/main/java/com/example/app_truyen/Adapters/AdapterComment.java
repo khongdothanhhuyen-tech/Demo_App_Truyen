@@ -131,7 +131,7 @@ public class AdapterComment extends RecyclerView.Adapter<AdapterComment.CommentV
             return days + " ngày trước";
         }
     }
-    // Cập nhật trạng thái like
+    // Hàm cập nhật trạng thái like
     private void updateLikeUI(CommentViewHolder holder, boolean isLiked, int count) {
         if (isLiked) {
             holder.tvBtnLike.setTextColor(orangeColor);
@@ -155,7 +155,7 @@ public class AdapterComment extends RecyclerView.Adapter<AdapterComment.CommentV
             holder.layoutLikeCount.setVisibility(View.GONE);
         }
     }
-    //Hàm xử lý người dùng bấm thích
+    // Hàm xử lý người dùng bấm thích
     private void addLikeToFirestore(String commentId) {
         FirebaseFirestore.getInstance()
                 .collection("Truyen").document(storyId)
