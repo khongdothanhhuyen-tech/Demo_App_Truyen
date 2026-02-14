@@ -21,8 +21,6 @@ import com.example.app_truyen.API.RetrofitClient;
 import com.example.app_truyen.Models.Story;
 import com.example.app_truyen.R;
 import com.google.firebase.firestore.FirebaseFirestore;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -183,28 +181,38 @@ public class AddEditStoryActivity extends AppCompatActivity {
     }
     // Hàm upload ảnh lên Cloudinary
     private void uploadImageToCloudinary(Uri imageUri) {
+        setLoadingState(true);
         try {
-            String tempFileName = "cover_" + System.currentTimeMillis() + ".jpg";
-            File file = new File(getCacheDir(), tempFileName);
-            InputStream inputStream = getContentResolver().openInputStream(imageUri);
-            FileOutputStream outputStream = new FileOutputStream(file);
-            byte[] buffer = new byte[1024];
-            int len;
-            while (true) {
-                assert inputStream != null;
-                if (!((len = inputStream.read(buffer)) > 0)) break;
-                outputStream.write(buffer, 0, len);
-            }
-            outputStream.close();
-            inputStream.close();
+            RequestBody requestBody = new RequestBody() {
+                @Override
+                public MediaType contentType() {
+                    return MediaType.parse("image/*");
+                }
+                @Override
+                public long contentLength() {
+                    try (InputStream inputStream = getContentResolver().openInputStream(imageUri)) {
+                        return inputStream != null ? inputStream.available() : -1;
+                    } catch (IOException e) {
+                        return -1;
+                    }
+                }
+                @Override
+                public void writeTo(@NonNull okio.BufferedSink sink) throws IOException {
+                    try (InputStream inputStream = getContentResolver().openInputStream(imageUri)) {
+                        if (inputStream != null) {
+                            sink.writeAll(okio.Okio.source(inputStream));
+                        }
+                    }
+                }
+            };
 
-            RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), file);
-            MultipartBody.Part body = MultipartBody.Part.createFormData("file", file.getName(), requestFile);
+            // 2. Tạo MultipartBody
+            MultipartBody.Part body = MultipartBody.Part.createFormData("file", "upload_" + System.currentTimeMillis() + ".jpg", requestBody);
+
             String UPLOAD_PRESET = "upload-story";
             RequestBody uploadPreset = RequestBody.create(MediaType.parse("text/plain"), UPLOAD_PRESET);
 
-            Call<CloudinaryResponse> call = cloudinaryService.uploadImage(uploadPreset, body);
-            call.enqueue(new Callback<>() {
+            cloudinaryService.uploadImage(uploadPreset, body).enqueue(new Callback<>() {
                 @Override
                 public void onResponse(@NonNull Call<CloudinaryResponse> call, @NonNull Response<CloudinaryResponse> response) {
                     if (response.isSuccessful() && response.body() != null) {
@@ -212,23 +220,23 @@ public class AddEditStoryActivity extends AppCompatActivity {
                         saveDataToFirestore(imageUrl);
                     } else {
                         setLoadingState(false);
-                        Toast.makeText(AddEditStoryActivity.this, "Lỗi tải ảnh lên Cloudinary", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(AddEditStoryActivity.this, "Lỗi Cloudinary: " + response.message(), Toast.LENGTH_SHORT).show();
                     }
                 }
 
                 @Override
                 public void onFailure(@NonNull Call<CloudinaryResponse> call, @NonNull Throwable t) {
                     setLoadingState(false);
-                    Toast.makeText(AddEditStoryActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AddEditStoryActivity.this, "Lỗi mạng: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
-        } catch (IOException e) {
+
+        } catch (Exception e) {
             setLoadingState(false);
             e.printStackTrace();
-            Toast.makeText(this, "Không đọc được file ảnh!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Lỗi tạo file upload!", Toast.LENGTH_SHORT).show();
         }
     }
-
     // Hàm lưu dữ liệu vào Firestore
     private void saveDataToFirestore(String imgUrl) {
         String maTruyen = edtMaTruyen.getText().toString().trim();

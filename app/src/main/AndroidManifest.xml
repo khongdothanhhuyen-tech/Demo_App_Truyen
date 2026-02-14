@@ -75,6 +75,10 @@
             android:name=".Activity.ProfileActivity"
             android:exported="false">
         </activity>
+        <activity
+            android:name=".Activity.CommentActivity"
+            android:exported="false">
+        </activity>
 
     </application>
 

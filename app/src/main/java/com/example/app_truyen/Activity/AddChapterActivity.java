@@ -23,8 +23,6 @@ import com.example.app_truyen.Models.Chapter;
 import com.example.app_truyen.R;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -32,6 +30,8 @@ import java.util.ArrayList;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
+import okio.BufferedSink;
+import okio.Okio;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -43,7 +43,7 @@ public class AddChapterActivity extends AppCompatActivity {
     private final ArrayList<Uri> dsUriAnh = new ArrayList<>();
     private final ArrayList<String> dsLinkAnhCloudinary = new ArrayList<>();
     private ProgressBar progressBar;
-    private Button btnChonAnh;
+    private Button btnChonAnh, btnSave;
     private CloudinaryService cloudinaryService;
 
     private final ActivityResultLauncher<Intent> pickImgLauncher = registerForActivityResult(
@@ -80,7 +80,7 @@ public class AddChapterActivity extends AppCompatActivity {
         edtMaChuong = findViewById(R.id.edtMaChuong);
         edtTenChuong = findViewById(R.id.edtTenChuong);
         btnChonAnh = findViewById(R.id.btnChonAnhChuong);
-        Button btnSave = findViewById(R.id.btnSaveChapter);
+        btnSave = findViewById(R.id.btnSaveChapter);
         Button btnCancel = findViewById(R.id.btnCancelChapter);
         TextView tvBack = findViewById(R.id.tvBack);
         progressBar = findViewById(R.id.progressBarChapter);
@@ -116,35 +116,47 @@ public class AddChapterActivity extends AppCompatActivity {
         btnCancel.setOnClickListener(v -> finish());
     }
 
-    // Hàm đệ quy upload từng ảnh
+    // Hàm đệ quy upload từng ảnh lên Cloudinary
     private void uploadImg(int index) {
         if (index >= dsUriAnh.size()) {
             saveToFirestore();
             return;
         }
-
         try {
             Uri imageUri = dsUriAnh.get(index);
-            String tempFileName = "chapter_img_" + System.currentTimeMillis() + ".jpg";
-            File file = new File(getCacheDir(), tempFileName);
-            InputStream inputStream = getContentResolver().openInputStream(imageUri);
-            FileOutputStream outputStream = new FileOutputStream(file);
-            byte[] buffer = new byte[1024];
-            int len;
-            while (true) {
-                assert inputStream != null;
-                if (!((len = inputStream.read(buffer)) > 0)) break;
-                outputStream.write(buffer, 0, len);
-            }
-            outputStream.close();
-            inputStream.close();
+            RequestBody requestBody = new RequestBody() {
+                @Nullable
+                @Override
+                public MediaType contentType() {
+                    return MediaType.parse("image/*");
+                }
 
-            RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), file);
-            MultipartBody.Part body = MultipartBody.Part.createFormData("file", file.getName(), requestFile);
-            String UPLOAD_PRESET = "upload-story";
+                @Override
+                public long contentLength() {
+                    try (InputStream inputStream = getContentResolver().openInputStream(imageUri)) {
+                        return inputStream != null ? inputStream.available() : -1;
+                    } catch (IOException e) {
+                        return -1;
+                    }
+                }
+                @Override
+                public void writeTo(@NonNull BufferedSink sink) throws IOException {
+                    try (InputStream inputStream = getContentResolver().openInputStream(imageUri)) {
+                        if (inputStream != null) {
+                            sink.writeAll(Okio.source(inputStream));
+                        }
+                    }
+                }
+            };
+
+            // 2. Tạo MultipartBody
+            String fileName = "chapter_" + System.currentTimeMillis() + "_" + index + ".jpg";
+            MultipartBody.Part body = MultipartBody.Part.createFormData("file", fileName, requestBody);
+
+            String UPLOAD_PRESET = "upload-story"; // Đảm bảo đúng tên preset của bạn
             RequestBody uploadPreset = RequestBody.create(MediaType.parse("text/plain"), UPLOAD_PRESET);
 
-            // Gọi API Upload
+            // 3. Gọi API Upload
             cloudinaryService.uploadImage(uploadPreset, body).enqueue(new Callback<>() {
                 @Override
                 public void onResponse(@NonNull Call<CloudinaryResponse> call, @NonNull Response<CloudinaryResponse> response) {
@@ -153,39 +165,34 @@ public class AddChapterActivity extends AppCompatActivity {
                         dsLinkAnhCloudinary.add(url);
                         uploadImg(index + 1);
                     } else {
-                        progressBar.setVisibility(View.GONE);
-                        findViewById(R.id.btnSaveChapter).setEnabled(true);
-                        findViewById(R.id.btnChonAnhChuong).setEnabled(true);
-                        Toast.makeText(AddChapterActivity.this, "Lỗi Cloudinary: " + response.message(), Toast.LENGTH_SHORT).show();
+                        handleUploadError("Lỗi Cloudinary: " + response.message());
                     }
                 }
 
                 @Override
                 public void onFailure(@NonNull Call<CloudinaryResponse> call, @NonNull Throwable t) {
-                    progressBar.setVisibility(View.GONE);
-                    findViewById(R.id.btnSaveChapter).setEnabled(true);
-                    findViewById(R.id.btnChonAnhChuong).setEnabled(true);
-                    Toast.makeText(AddChapterActivity.this, "Lỗi mạng: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    handleUploadError("Lỗi mạng: " + t.getMessage());
                 }
             });
 
-        } catch (IOException e) {
-            progressBar.setVisibility(View.GONE);
-            findViewById(R.id.btnSaveChapter).setEnabled(true);
-            findViewById(R.id.btnChonAnhChuong).setEnabled(true);
-            e.printStackTrace();
-            Toast.makeText(this, "Không đọc được file ảnh số " + (index + 1), Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            handleUploadError("Lỗi xử lý file: " + e.getMessage());
         }
+    }
+
+    // Hàm xử lý lỗi chung
+    private void handleUploadError(String message) {
+        progressBar.setVisibility(View.GONE);
+        btnSave.setEnabled(true);
+        btnChonAnh.setEnabled(true);
+        Toast.makeText(AddChapterActivity.this, message, Toast.LENGTH_SHORT).show();
     }
 
     private void saveToFirestore() {
         String maChuong = edtMaChuong.getText().toString().trim();
         String tenChuong = edtTenChuong.getText().toString().trim();
         if (maChuong.isEmpty()) {
-            progressBar.setVisibility(View.GONE);
-            findViewById(R.id.btnSaveChapter).setEnabled(true);
-            findViewById(R.id.btnChonAnhChuong).setEnabled(true);
-            Toast.makeText(this, "Mã chương trống!", Toast.LENGTH_SHORT).show();
+            handleUploadError("Mã chương trống!");
             return;
         }
 
@@ -197,11 +204,6 @@ public class AddChapterActivity extends AppCompatActivity {
                     Toast.makeText(AddChapterActivity.this, "Thêm chương thành công!", Toast.LENGTH_SHORT).show();
                     finish();
                 })
-                .addOnFailureListener(e -> {
-                    progressBar.setVisibility(View.GONE);
-                    findViewById(R.id.btnSaveChapter).setEnabled(true);
-                    findViewById(R.id.btnChonAnhChuong).setEnabled(true);
-                    Toast.makeText(AddChapterActivity.this, "Lỗi Firestore: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e -> handleUploadError("Lỗi Firestore: " + e.getMessage()));
     }
 }
