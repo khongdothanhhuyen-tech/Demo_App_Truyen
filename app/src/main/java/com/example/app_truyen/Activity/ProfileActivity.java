@@ -14,6 +14,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.widget.NestedScrollView;
 
@@ -28,14 +29,14 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
+import okio.BufferedSink;
+import okio.Okio;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -123,26 +124,41 @@ public class ProfileActivity extends AppCompatActivity {
     private void uploadAvatarToCloudinary(Uri imageUri) {
         setLoadingState(true);
         try {
-            String tempFileName = "avatar_" + System.currentTimeMillis() + ".jpg";
-            File file = new File(getCacheDir(), tempFileName);
+            // 1. Tạo RequestBody
+            RequestBody requestBody = new RequestBody() {
+                @Nullable
+                @Override
+                public MediaType contentType() {
+                    return MediaType.parse("image/*");
+                }
 
-            InputStream inputStream = getContentResolver().openInputStream(imageUri);
-            FileOutputStream outputStream = new FileOutputStream(file);
-            byte[] buffer = new byte[1024];
-            int len;
-            while (true) {
-                assert inputStream != null;
-                if (!((len = inputStream.read(buffer)) > 0)) break;
-                outputStream.write(buffer, 0, len);
-            }
-            outputStream.close();
-            inputStream.close();
+                @Override
+                public long contentLength() {
+                    try (InputStream inputStream = getContentResolver().openInputStream(imageUri)) {
+                        return inputStream != null ? inputStream.available() : -1;
+                    } catch (IOException e) {
+                        return -1;
+                    }
+                }
 
-            RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), file);
-            MultipartBody.Part body = MultipartBody.Part.createFormData("file", file.getName(), requestFile);
+                @Override
+                public void writeTo(@NonNull BufferedSink sink) throws IOException {
+                    try (InputStream inputStream = getContentResolver().openInputStream(imageUri)) {
+                        if (inputStream != null) {
+                            sink.writeAll(Okio.source(inputStream));
+                        }
+                    }
+                }
+            };
+
+            // 2. Tạo MultipartBody
+            String fileName = "avatar_" + System.currentTimeMillis() + ".jpg";
+            MultipartBody.Part body = MultipartBody.Part.createFormData("file", fileName, requestBody);
+
             String UPLOAD_PRESET = "upload-story";
             RequestBody uploadPreset = RequestBody.create(MediaType.parse("text/plain"), UPLOAD_PRESET);
 
+            // 3. Gọi API
             cloudinaryService.uploadImage(uploadPreset, body).enqueue(new Callback<CloudinaryResponse>() {
                 @Override
                 public void onResponse(@NonNull Call<CloudinaryResponse> call, @NonNull Response<CloudinaryResponse> response) {
@@ -151,25 +167,28 @@ public class ProfileActivity extends AppCompatActivity {
                         updateAvatarInFirestore(avtUrl);
                     } else {
                         setLoadingState(false);
-                        Toast.makeText(ProfileActivity.this, "Lỗi upload ảnh", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(ProfileActivity.this, "Lỗi upload ảnh: " + response.message(), Toast.LENGTH_SHORT).show();
                     }
                 }
                 @Override
                 public void onFailure(@NonNull Call<CloudinaryResponse> call, @NonNull Throwable t) {
                     setLoadingState(false);
-                    Toast.makeText(ProfileActivity.this, "Lỗi kết nối", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ProfileActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
-        } catch (IOException e) {
+        } catch (Exception e) {
             setLoadingState(false);
             e.printStackTrace();
-            Toast.makeText(this, "Không đọc được file ảnh", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Lỗi xử lý file ảnh", Toast.LENGTH_SHORT).show();
         }
     }
 
     // Hàm cập nhật Link ảnh vào Firestore
     private void updateAvatarInFirestore(String url) {
-        String uid = auth.getCurrentUser().getUid();
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) return;
+
+        String uid = user.getUid();
         db.collection("TaiKhoan").document(uid)
                 .update("avatarUrl", url)
                 .addOnSuccessListener(aVoid -> {

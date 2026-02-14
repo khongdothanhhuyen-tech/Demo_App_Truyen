@@ -40,7 +40,7 @@ public class CommentActivity extends AppCompatActivity {
         RecyclerView rvComment = findViewById(R.id.rv_Comment);
         edtComment = findViewById(R.id.edtComment);
         ImageView btnSend = findViewById(R.id.btnSend);
-
+        ImageView btnBack = findViewById(R.id.imgBack);
         storyId = getIntent().getStringExtra("MA_TRUYEN");
         if (storyId == null) {
             Toast.makeText(this, "Lỗi: Không tìm thấy truyện", Toast.LENGTH_SHORT).show();
@@ -63,6 +63,7 @@ public class CommentActivity extends AppCompatActivity {
 
         loadComments();
         btnSend.setOnClickListener(v -> postComment());
+        btnBack.setOnClickListener(v -> finish());
     }
 
     //Hàm lấy thông tin người dùng để hiển thị
