@@ -1,5 +1,7 @@
 package com.example.app_truyen.Activity;
 
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -23,9 +25,14 @@ import com.example.app_truyen.Models.Chapter;
 import com.example.app_truyen.R;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Locale;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -45,6 +52,14 @@ public class AddChapterActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private Button btnChonAnh, btnSave;
     private CloudinaryService cloudinaryService;
+
+    ///
+    private Uri selectedPdfUri = null;
+    private Button btnChonPdf;
+    ///
+    private long selectedPublishTime = 0;
+    private Button btnChonNgay;
+
 
     private final ActivityResultLauncher<Intent> pickImgLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -67,9 +82,25 @@ public class AddChapterActivity extends AppCompatActivity {
                     } else {
                         String buttonText = "Đã chọn " + dsUriAnh.size() + " ảnh";
                         btnChonAnh.setText(buttonText);
+
+                        selectedPdfUri = null; // THÊM
+                        btnChonPdf.setEnabled(false); // THÊM
                     }
                 }
             });
+    private final ActivityResultLauncher<Intent> pickPdfLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                            selectedPdfUri = result.getData().getData();
+                            btnChonPdf.setText("Đã chọn PDF");
+                            dsUriAnh.clear(); // Nếu chọn PDF thì bỏ ảnh
+                            btnChonAnh.setText("Chọn Ảnh Chương");
+                            btnChonAnh.setEnabled(false); //
+                        }
+                    });
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -84,6 +115,17 @@ public class AddChapterActivity extends AppCompatActivity {
         Button btnCancel = findViewById(R.id.btnCancelChapter);
         TextView tvBack = findViewById(R.id.tvBack);
         progressBar = findViewById(R.id.progressBarChapter);
+
+        ///
+        btnChonPdf = findViewById(R.id.btnChonPdf);
+        btnChonPdf.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("application/pdf");
+            pickPdfLauncher.launch(intent);
+        });
+        ///
+        btnChonNgay = findViewById(R.id.btnChonNgay);
+        btnChonNgay.setOnClickListener(v -> showDateTimePicker());
 
         cloudinaryService = RetrofitClient.getClient().create(CloudinaryService.class);
         maTruyenGoc = getIntent().getStringExtra("MA_TRUYEN");
@@ -101,15 +143,24 @@ public class AddChapterActivity extends AppCompatActivity {
         });
 
         btnSave.setOnClickListener(v -> {
-            if (dsUriAnh.isEmpty()) {
-                Toast.makeText(this, "Vui lòng chọn ít nhất 1 ảnh!", Toast.LENGTH_SHORT).show();
+            btnChonNgay.setEnabled(false);
+
+            if (dsUriAnh.isEmpty() && selectedPdfUri == null) {
+                Toast.makeText(this, "Chọn ảnh hoặc PDF!", Toast.LENGTH_SHORT).show();
                 return;
             }
+
             progressBar.setVisibility(View.VISIBLE);
             btnSave.setEnabled(false);
             btnChonAnh.setEnabled(false);
-            dsLinkAnhCloudinary.clear();
-            uploadImg(0);
+            btnChonPdf.setEnabled(false);
+
+            if (selectedPdfUri != null) {
+                uploadPdfToCloudinary(selectedPdfUri);
+            } else {
+                dsLinkAnhCloudinary.clear();
+                uploadImg(0);
+            }
         });
 
         tvBack.setOnClickListener(v -> finish());
@@ -119,7 +170,7 @@ public class AddChapterActivity extends AppCompatActivity {
     // Hàm đệ quy upload từng ảnh lên Cloudinary
     private void uploadImg(int index) {
         if (index >= dsUriAnh.size()) {
-            saveToFirestore();
+            saveToFirestore(); // giữ nguyên vì nó lưu ảnh();
             return;
         }
         try {
@@ -185,6 +236,8 @@ public class AddChapterActivity extends AppCompatActivity {
         progressBar.setVisibility(View.GONE);
         btnSave.setEnabled(true);
         btnChonAnh.setEnabled(true);
+        btnChonPdf.setEnabled(true);
+        btnChonNgay.setEnabled(true);
         Toast.makeText(AddChapterActivity.this, message, Toast.LENGTH_SHORT).show();
     }
 
@@ -197,6 +250,13 @@ public class AddChapterActivity extends AppCompatActivity {
         }
 
         Chapter chapter = new Chapter(maChuong, tenChuong, dsLinkAnhCloudinary);
+
+        ///
+        if (selectedPublishTime == 0) {
+            selectedPublishTime = System.currentTimeMillis();
+        }
+        chapter.setPublishTime(selectedPublishTime);
+
         db.collection("Truyen").document(maTruyenGoc)
                 .collection("chuong").document(maChuong)
                 .set(chapter).addOnSuccessListener(aVoid -> {
@@ -205,5 +265,139 @@ public class AddChapterActivity extends AppCompatActivity {
                     finish();
                 })
                 .addOnFailureListener(e -> handleUploadError("Lỗi Firestore: " + e.getMessage()));
+    }
+
+    private void uploadPdfToCloudinary(Uri pdfUri) {
+
+        try {
+            String tempFileName = "chapter_pdf_" + System.currentTimeMillis() + ".pdf";
+            File file = new File(getCacheDir(), tempFileName);
+
+            InputStream inputStream = getContentResolver().openInputStream(pdfUri);
+            FileOutputStream outputStream = new FileOutputStream(file);
+
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = inputStream.read(buffer)) > 0) {
+                outputStream.write(buffer, 0, len);
+            }
+
+            outputStream.close();
+            inputStream.close();
+
+            RequestBody requestFile =
+                    RequestBody.create(MediaType.parse("application/pdf"), file);
+
+            MultipartBody.Part body =
+                    MultipartBody.Part.createFormData("file", file.getName(), requestFile);
+
+            String UPLOAD_PRESET = "upload-story";
+            RequestBody uploadPreset =
+                    RequestBody.create(MediaType.parse("text/plain"), UPLOAD_PRESET);
+
+            cloudinaryService.uploadPdf(uploadPreset, body)
+                    .enqueue(new Callback<CloudinaryResponse>() {
+
+                        @Override
+                        public void onResponse(Call<CloudinaryResponse> call,
+                                               Response<CloudinaryResponse> response) {
+
+                            if (response.isSuccessful() && response.body() != null) {
+
+                                String pdfUrl = response.body().getSecure_url();
+                                savePdfToFirestore(pdfUrl);
+
+                            } else {
+                                showError("Upload PDF lỗi");
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<CloudinaryResponse> call, Throwable t) {
+                            showError("Lỗi mạng: " + t.getMessage());
+                        }
+                    });
+
+        } catch (IOException e) {
+            showError("Không đọc được file PDF");
+        }
+    }
+
+    private void showError(String message) {
+        progressBar.setVisibility(View.GONE);
+        findViewById(R.id.btnSaveChapter).setEnabled(true);
+        findViewById(R.id.btnChonAnhChuong).setEnabled(true);
+        btnChonPdf.setEnabled(true);
+        btnChonNgay.setEnabled(true);
+
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private void savePdfToFirestore(String pdfUrl) {
+
+        String maChuong = edtMaChuong.getText().toString().trim();
+        String tenChuong = edtTenChuong.getText().toString().trim();
+
+        if (maChuong.isEmpty()) {
+            showError("Mã chương trống!");
+            return;
+        }
+
+        Chapter chapter = new Chapter(maChuong, tenChuong, pdfUrl);
+        if (selectedPublishTime == 0) {
+            selectedPublishTime = System.currentTimeMillis();
+        }
+
+        chapter.setPublishTime(selectedPublishTime);
+
+        db.collection("Truyen").document(maTruyenGoc)
+                .collection("chuong").document(maChuong)
+                .set(chapter)
+                .addOnSuccessListener(aVoid -> {
+                    progressBar.setVisibility(View.GONE);
+                    Toast.makeText(this, "Thêm chương PDF thành công!", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e -> showError(e.getMessage()));
+    }
+
+    private void showDateTimePicker() {
+
+        Calendar calendar = Calendar.getInstance();
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(this,
+                (view, year, month, dayOfMonth) -> {
+
+                    calendar.set(Calendar.YEAR, year);
+                    calendar.set(Calendar.MONTH, month);
+                    calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+
+                    TimePickerDialog timePickerDialog = new TimePickerDialog(this,
+                            (timeView, hour, minute) -> {
+
+                                calendar.set(Calendar.HOUR_OF_DAY, hour);
+                                calendar.set(Calendar.MINUTE, minute);
+                                calendar.set(Calendar.SECOND, 0);
+
+                                selectedPublishTime = calendar.getTimeInMillis();
+
+                                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+                                String formattedDate = sdf.format(calendar.getTime());
+                                btnChonNgay.setText(formattedDate);
+
+                                Toast.makeText(this, "Đã chọn thời gian đăng", Toast.LENGTH_SHORT).show();
+
+                            },
+                            calendar.get(Calendar.HOUR_OF_DAY),
+                            calendar.get(Calendar.MINUTE),
+                            true);
+
+                    timePickerDialog.show();
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH));
+
+        datePickerDialog.show();
     }
 }

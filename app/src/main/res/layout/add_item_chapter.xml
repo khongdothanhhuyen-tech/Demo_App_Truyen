@@ -70,13 +70,32 @@
             android:textColorHint="@color/gray_text" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <Button
-        android:id="@+id/btnChonAnhChuong"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Chọn ảnh chương"
+        android:weightSum="2">
+        <Button
+            android:id="@+id/btnChonAnhChuong"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Chọn ảnh chương"
+            android:backgroundTint="@color/orange"
+            android:textColor="@color/white"/>
+        <Button
+            android:id="@+id/btnChonPdf"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="@color/orange"
+            android:text="Chọn PDF" />
+    </LinearLayout>
+    <Button
+        android:id="@+id/btnChonNgay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:backgroundTint="@color/orange"
-        android:textColor="@color/white"/>
+        android:text="Chọn thời gian đăng"/>
     <LinearLayout
         android:layout_marginTop="20dp"
         android:layout_width="match_parent"

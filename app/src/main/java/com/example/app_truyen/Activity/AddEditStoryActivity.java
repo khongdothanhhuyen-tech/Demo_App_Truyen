@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -30,13 +31,18 @@ import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+/// /
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AddEditStoryActivity extends AppCompatActivity {
 
     private final String[] listTheLoai = {"Hành động", "Tình cảm", "Học đường", "Phiêu lưu", "Sát thủ", "Kinh dị", "Hài hước", "Viễn tưởng", "Khoa học viễn tưởng", "Siêu anh hùng"};
     private boolean[] checkedTheLoai;
     private final ArrayList<String> userSelectedTheLoai = new ArrayList<>();
-    TextView tvBack;
+    TextView tvBack, tvHistory;
     EditText edtMaTruyen, edtTenTruyen, edtTheLoai, edtMoTa, edtTacGia;
     Button btnChonAnh, btnSave, btnCancel;
     FirebaseFirestore db;
@@ -45,6 +51,9 @@ public class AddEditStoryActivity extends AppCompatActivity {
     private Story truyenCu;
     private boolean isEditMode = false;
     private Uri selectedImageUri;
+    CheckBox cbAllowComment;
+
+    private boolean oldAllowComment = true;
 
 
     // Launcher chọn ảnh
@@ -76,6 +85,26 @@ public class AddEditStoryActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         cloudinaryService = RetrofitClient.getClient().create(CloudinaryService.class);
         checkedTheLoai = new boolean[listTheLoai.length];
+
+        ///
+        cbAllowComment = findViewById(R.id.cbAllowComment);
+        ///
+        tvHistory = findViewById(R.id.tvHistory);
+        tvHistory.setOnClickListener(v -> {
+
+            if (isEditMode && truyenCu != null) {
+
+                Intent intent = new Intent(this, StoryHistoryActivity.class);
+                intent.putExtra("MA_TRUYEN", truyenCu.getMaTruyen());
+                startActivity(intent);
+
+            } else {
+                Toast.makeText(this,
+                        "Phải lưu truyện trước khi xem lịch sử",
+                        Toast.LENGTH_SHORT).show();
+            }
+
+        });
 
         edtTheLoai.setFocusable(false);
         edtTheLoai.setClickable(true);
@@ -131,6 +160,24 @@ public class AddEditStoryActivity extends AppCompatActivity {
             btnSave.setText("Cập Nhật Truyện");
             edtMaTruyen.setText(truyenCu.getMaTruyen());
             edtMaTruyen.setEnabled(false);
+
+            /// /
+            FirebaseFirestore.getInstance()
+                    .collection("StorySettings")
+                    .document(truyenCu.getMaTruyen())
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            Boolean allow = documentSnapshot.getBoolean("allowComment");
+                            if (allow != null) {
+                                oldAllowComment = allow;
+                                cbAllowComment.setChecked(allow);
+                            }
+                        } else {
+                            cbAllowComment.setChecked(true); // mặc định bật comment
+                        }
+                    });
+
             edtTenTruyen.setText(truyenCu.getTenTruyen());
 
             if (truyenCu.getTheLoai() != null) {
@@ -147,6 +194,7 @@ public class AddEditStoryActivity extends AppCompatActivity {
             edtTacGia.setText(truyenCu.getTacGia());
             btnChonAnh.setText("Chọn Ảnh Mới ");
         } else {
+            tvHistory.setVisibility(View.GONE);
             btnSave.setText("Lưu Truyện Mới");
             edtMaTruyen.setEnabled(true);
         }
@@ -256,8 +304,20 @@ public class AddEditStoryActivity extends AppCompatActivity {
         }
 
         Story truyenMoi = new Story(maTruyen, tenTruyen, userSelectedTheLoai, tacGia, moTa, imgUrl);
+        ///
+        saveEditHistory(maTruyen, truyenMoi);
         db.collection("Truyen").document(maTruyen)
                 .set(truyenMoi).addOnSuccessListener(aVoid -> {
+
+                    // TẠI ĐÂY
+                    FirebaseFirestore.getInstance()
+                            .collection("StorySettings")
+                            .document(maTruyen)
+                            .set(java.util.Collections.singletonMap(
+                                    "allowComment",
+                                    cbAllowComment.isChecked()
+                            ));
+
                     setLoadingState(false);
                     Toast.makeText(AddEditStoryActivity.this, "Lưu thành công!", Toast.LENGTH_SHORT).show();
                     setResult(RESULT_OK);
@@ -268,4 +328,80 @@ public class AddEditStoryActivity extends AppCompatActivity {
                     Toast.makeText(AddEditStoryActivity.this, "Lỗi khi lưu dữ liệu: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
+    private void saveEditHistory(String maTruyen, Story newStory) {
+
+        if (!isEditMode || truyenCu == null) return;
+
+        Map<String, Object> changes = new HashMap<>();
+
+        // So sánh ảnh bìa
+        if (!truyenCu.getAnhBiaUrl().equals(newStory.getAnhBiaUrl())) {
+
+            Map<String, String> change = new HashMap<>();
+            change.put("old", truyenCu.getAnhBiaUrl());
+            change.put("new", newStory.getAnhBiaUrl());
+
+            changes.put("anhBiaUrl", change);
+        }
+
+        // So sánh tên truyện
+        if (!truyenCu.getTenTruyen().equals(newStory.getTenTruyen())) {
+            Map<String, String> change = new HashMap<>();
+            change.put("old", truyenCu.getTenTruyen());
+            change.put("new", newStory.getTenTruyen());
+            changes.put("tenTruyen", change);
+        }
+
+        // So sánh tác giả
+        if (!truyenCu.getTacGia().equals(newStory.getTacGia())) {
+            Map<String, String> change = new HashMap<>();
+            change.put("old", truyenCu.getTacGia());
+            change.put("new", newStory.getTacGia());
+            changes.put("tacGia", change);
+        }
+
+        // So sánh mô tả
+        if (!truyenCu.getMoTa().equals(newStory.getMoTa())) {
+            Map<String, String> change = new HashMap<>();
+            change.put("old", truyenCu.getMoTa());
+            change.put("new", newStory.getMoTa());
+            changes.put("moTa", change);
+        }
+
+        // So sánh thể loại
+        if (!truyenCu.getTheLoai().equals(newStory.getTheLoai())) {
+            Map<String, Object> change = new HashMap<>();
+            change.put("old", truyenCu.getTheLoai());
+            change.put("new", newStory.getTheLoai());
+            changes.put("theLoai", change);
+        }
+
+        // So sánh allowComment
+        boolean newAllowComment = cbAllowComment.isChecked();
+        if (oldAllowComment != newAllowComment) {
+
+            Map<String, String> change = new HashMap<>();
+            change.put("old", oldAllowComment ? "Bật" : "Tắt");
+            change.put("new", newAllowComment ? "Bật" : "Tắt");
+
+            changes.put("allowComment", change);
+        }
+
+        // Nếu không có thay đổi thì không lưu
+        if (changes.isEmpty()) return;
+
+        Map<String, Object> historyData = new HashMap<>();
+        historyData.put("editedAt", Timestamp.now());
+        historyData.put("editedBy", FirebaseAuth.getInstance().getCurrentUser().getUid());
+        historyData.put("changes", changes);
+
+        FirebaseFirestore.getInstance()
+                .collection("StoryEditHistory")
+                .document(maTruyen)
+                .collection("logs")
+                .add(historyData);
+    }
+
+
 }
