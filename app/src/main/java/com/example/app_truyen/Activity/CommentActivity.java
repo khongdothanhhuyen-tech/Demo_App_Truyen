@@ -1,6 +1,7 @@
 package com.example.app_truyen.Activity;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -20,6 +21,7 @@ import com.google.firebase.firestore.Query;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
 
 public class CommentActivity extends AppCompatActivity {
     private EditText edtComment;
@@ -42,11 +44,37 @@ public class CommentActivity extends AppCompatActivity {
         ImageView btnSend = findViewById(R.id.btnSend);
         ImageView btnBack = findViewById(R.id.imgBack);
         storyId = getIntent().getStringExtra("MA_TRUYEN");
+
+
+
         if (storyId == null) {
             Toast.makeText(this, "Lỗi: Không tìm thấy truyện", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
+
+        /// /
+        FirebaseFirestore.getInstance()
+                .collection("StorySettings")
+                .document(storyId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+
+                    if (documentSnapshot.exists()) {
+                        Boolean allow = documentSnapshot.getBoolean("allowComment");
+
+                        if (allow != null && !allow) {
+
+                            //  TẮT COMMENT
+                            edtComment.setVisibility(View.GONE);
+                            btnSend.setVisibility(View.GONE);
+
+                            Toast.makeText(this,
+                                    "Bình luận đã bị tắt bởi admin",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
 
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
@@ -118,4 +146,7 @@ public class CommentActivity extends AppCompatActivity {
                     }
                 });
     }
+
+
+
 }

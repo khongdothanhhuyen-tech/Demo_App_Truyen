@@ -79,6 +79,9 @@
             android:name=".Activity.CommentActivity"
             android:exported="false">
         </activity>
+        <activity android:name=".Activity.StoryHistoryActivity"/>
+
+
 
     </application>
 

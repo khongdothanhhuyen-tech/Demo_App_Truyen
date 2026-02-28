@@ -51,11 +51,13 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage")
 
     //Cloudinary
     implementation("com.cloudinary:cloudinary-android:3.0.2")
     implementation("com.cloudinary:cloudinary-android-download:3.0.2")
     implementation("com.cloudinary:cloudinary-android-preprocess:3.0.2")
+
 
     //Retrofit core library
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -70,5 +72,7 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
     implementation("com.google.android.flexbox:flexbox:3.0.0")
+
+    implementation("androidx.cardview:cardview:1.0.0")
 
 }

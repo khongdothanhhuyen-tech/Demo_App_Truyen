@@ -91,10 +91,13 @@ public class StoryDetailActivity extends AppCompatActivity {
                 .get().addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         dsChuong.clear();
+                        long now = System.currentTimeMillis(); ////
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             Chapter chapter = document.toObject(Chapter.class);
                             chapter.setId(document.getId());
-                            dsChuong.add(chapter);
+                            if (chapter.getPublishTime() <= now) {
+                                dsChuong.add(chapter);
+                            }
                         }
                         adapterChapter.notifyDataSetChanged();
                     } else {

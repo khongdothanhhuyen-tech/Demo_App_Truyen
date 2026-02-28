@@ -14,5 +14,12 @@ public interface CloudinaryService {
             @Part("upload_preset") RequestBody uploadPreset,
             @Part MultipartBody.Part file
     );
+
+    @Multipart
+    @POST("raw/upload")
+    Call<CloudinaryResponse> uploadPdf(
+            @Part("upload_preset") RequestBody uploadPreset,
+            @Part MultipartBody.Part file
+    );
 }
 

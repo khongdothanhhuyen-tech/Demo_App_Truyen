@@ -11,6 +11,8 @@ public class Story implements Serializable {
     private String moTa ;
     private String anhBiaUrl ;
 
+    private Boolean allowComment;
+
     public Story() {}
     public Story(String maTruyen , String tenTruyen , List<String> theLoai , String tacGia , String moTa , String anhBiaUrl) {
         this.maTruyen = maTruyen;
