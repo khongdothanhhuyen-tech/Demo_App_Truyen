@@ -13,10 +13,13 @@ import com.example.app_truyen.Adapters.AdapterChapter;
 import com.example.app_truyen.Models.Chapter;
 import com.example.app_truyen.Models.Story;
 import com.example.app_truyen.R;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public class StoryDetailActivity extends AppCompatActivity {
@@ -29,6 +32,7 @@ public class StoryDetailActivity extends AppCompatActivity {
     private List<Chapter> dsChuong;
     private FirebaseFirestore db;
     private Story currentStory;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,6 +69,7 @@ public class StoryDetailActivity extends AppCompatActivity {
             }
         });
     }
+
     private void loadStoryData() {
         Intent intent = getIntent();
         if (intent != null) {
@@ -83,6 +88,9 @@ public class StoryDetailActivity extends AppCompatActivity {
                 Glide.with(this).load(urlAnh).into(imgStoryPicture);
             }
             loadListChapters(currentStory.getMaTruyen());
+
+            // ---> GỌI HÀM ĐẾM LƯỢT XEM TẠI ĐÂY <---
+            recordUniqueView(currentStory.getMaTruyen());
         }
     }
 
@@ -91,7 +99,7 @@ public class StoryDetailActivity extends AppCompatActivity {
                 .get().addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         dsChuong.clear();
-                        long now = System.currentTimeMillis(); ////
+                        long now = System.currentTimeMillis();
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             Chapter chapter = document.toObject(Chapter.class);
                             chapter.setId(document.getId());
@@ -102,6 +110,56 @@ public class StoryDetailActivity extends AppCompatActivity {
                         adapterChapter.notifyDataSetChanged();
                     } else {
                         Toast.makeText(this, "Lỗi tải chương: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    // ---> THÊM HÀM XỬ LÝ LƯỢT XEM (TUẦN/THÁNG/TẤT CẢ) <---
+    private void recordUniqueView(String maTruyen) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return; // Khách chưa đăng nhập không tính view
+
+        String userId = user.getUid();
+
+        db.collection("Truyen").document(maTruyen)
+                .collection("NguoiDaXem").document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    // Nếu ID người này chưa có trong danh sách đã xem
+                    if (!documentSnapshot.exists()) {
+                        // 1. Lưu ID người dùng để lần sau bấm vào không bị tính trùng
+                        db.collection("Truyen").document(maTruyen)
+                                .collection("NguoiDaXem").document(userId)
+                                .set(new java.util.HashMap<>());
+
+                        // 2. Lấy dữ liệu truyện hiện tại để cộng View
+                        db.collection("Truyen").document(maTruyen).get().addOnSuccessListener(storyDoc -> {
+                            if (storyDoc.exists()) {
+                                Story story = storyDoc.toObject(Story.class);
+                                if (story == null) return;
+
+                                Calendar cal = Calendar.getInstance();
+                                int year = cal.get(Calendar.YEAR);
+                                int month = cal.get(Calendar.MONTH) + 1;
+                                int week = cal.get(Calendar.WEEK_OF_YEAR);
+
+                                String currentMonthKey = year + "_" + month;
+                                String currentWeekKey = year + "_" + week;
+
+                                int newViewAll = story.getViewCountAll() + 1;
+                                int newViewMonth = (currentMonthKey.equals(story.getMonthKey())) ? story.getViewCountMonth() + 1 : 1;
+                                int newViewWeek = (currentWeekKey.equals(story.getWeekKey())) ? story.getViewCountWeek() + 1 : 1;
+
+                                // 3. Đẩy thông số cập nhật lên Firebase
+                                db.collection("Truyen").document(maTruyen).update(
+                                        "viewCountAll", newViewAll,
+                                        "viewCountMonth", newViewMonth,
+                                        "viewCountWeek", newViewWeek,
+                                        "monthKey", currentMonthKey,
+                                        "weekKey", currentWeekKey
+                                );
+                            }
+                        });
                     }
                 });
     }
