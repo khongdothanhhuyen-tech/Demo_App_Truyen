@@ -75,21 +75,37 @@ public class StoryDetailActivity extends AppCompatActivity {
         if (intent != null) {
             currentStory = (Story) intent.getSerializableExtra("TRUYEN_DATA");
         }
-
         if (currentStory != null) {
             tvTenTruyen.setText(currentStory.getTenTruyen());
-            if (currentStory.getTheLoai() != null) {
-                tvTheLoai.setText(String.join(", ", currentStory.getTheLoai()));
-            }
-            tvTacGia.setText(currentStory.getTacGia());
-            tvMoTa.setText(currentStory.getMoTa());
             String urlAnh = currentStory.getAnhBiaUrl();
             if (urlAnh != null && !urlAnh.isEmpty()) {
                 Glide.with(this).load(urlAnh).into(imgStoryPicture);
             }
-            loadListChapters(currentStory.getMaTruyen());
 
-            // ---> GỌI HÀM ĐẾM LƯỢT XEM TẠI ĐÂY <---
+            db.collection("Truyen").document(currentStory.getMaTruyen())
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            Story fullStory = documentSnapshot.toObject(Story.class);
+                            if (fullStory != null) {
+                                fullStory.setMaTruyen(documentSnapshot.getId());
+                                currentStory = fullStory;
+
+                                tvTenTruyen.setText(fullStory.getTenTruyen());
+
+                                if (fullStory.getTheLoai() != null && !fullStory.getTheLoai().isEmpty()) {
+                                    tvTheLoai.setText(String.join(", ", fullStory.getTheLoai()));
+                                } else {
+                                    tvTheLoai.setText("Đang cập nhật");
+                                }
+
+                                tvTacGia.setText(fullStory.getTacGia() != null ? fullStory.getTacGia() : "Đang cập nhật");
+                                tvMoTa.setText(fullStory.getMoTa() != null ? fullStory.getMoTa() : "Chưa có mô tả");
+                            }
+                        }
+                    });
+
+            loadListChapters(currentStory.getMaTruyen());
             recordUniqueView(currentStory.getMaTruyen());
         }
     }

@@ -118,13 +118,10 @@ public class CommunityChatActivity extends AppCompatActivity {
                 if (email != null && email.contains("@")) {
                     currentUserName = email.split("@")[0];
                 }
-
-                // XÉT QUYỀN ADMIN
                 String role = doc.getString("role");
                 boolean isAdmin = "admin".equals(role);
                 adapterChat.setAdmin(isAdmin);
 
-                // NẾU LÀ ADMIN -> BẤM VÀO KHUNG GHIM ĐỂ SỬA
                 if (isAdmin) {
                     layoutPinnedMsg.setOnClickListener(v -> showEditPinnedMessageDialog());
                 } else {
@@ -169,16 +166,13 @@ public class CommunityChatActivity extends AppCompatActivity {
                             long timeNow = System.currentTimeMillis();
                             long banTime = banUntil.toDate().getTime();
 
-                            // Nếu thời gian cấm lớn hơn thời gian hiện tại -> Đang bị cấm
                             if (banTime > timeNow) {
-                                // Tính toán chính xác thời gian còn lại
                                 long diffMillis = banTime - timeNow;
                                 long diffDays = diffMillis / (1000 * 60 * 60 * 24);
                                 long diffHours = (diffMillis / (1000 * 60 * 60)) % 24;
                                 long diffMinutes = (diffMillis / (1000 * 60)) % 60;
                                 long diffSeconds = (diffMillis / 1000) % 60;
 
-                                // Xây dựng chuỗi thông báo
                                 StringBuilder sb = new StringBuilder();
                                 if (diffDays > 0) sb.append(diffDays).append(" ngày ");
                                 if (diffHours > 0) sb.append(diffHours).append(" giờ ");
@@ -256,13 +250,9 @@ public class CommunityChatActivity extends AppCompatActivity {
         RecyclerView rvSearch = view.findViewById(R.id.rvSearchStoryChat);
 
         List<Story> searchResults = new ArrayList<>();
-
-        // Sử dụng AdapterPickStory đã tạo ở bước trước
         AdapterPickStory pickAdapter = new AdapterPickStory(this, searchResults, pickedStory -> {
-            // Khi người dùng bấm chọn 1 truyện
             attachedStory = pickedStory;
 
-            // Hiển thị khung Preview lên trên ô chat
             layoutPreviewStory.setVisibility(View.VISIBLE);
             tvPreviewStoryName.setText(pickedStory.getTenTruyen());
 
@@ -271,8 +261,6 @@ public class CommunityChatActivity extends AppCompatActivity {
             } else {
                 imgPreviewStory.setImageResource(R.drawable.app_icon); // Hoặc ảnh mặc định của bạn
             }
-
-            // Đóng bảng tìm kiếm
             bottomSheetDialog.dismiss();
         });
 
@@ -311,11 +299,9 @@ public class CommunityChatActivity extends AppCompatActivity {
         bottomSheetDialog.show();
     }
 
-    // HÀM GỬI TIN NHẮN (ĐÃ CẬP NHẬT ĐỂ MANG THEO TRUYỆN
+    // HÀM GỬI TIN NHẮN
     private void sendMessage() {
         String content = edtMessage.getText().toString().trim();
-
-        // Cho phép gửi nếu có nội dung HOẶC có đính kèm truyện
         if (content.isEmpty() && attachedStory == null) return;
 
         String msgId = UUID.randomUUID().toString();
@@ -336,8 +322,6 @@ public class CommunityChatActivity extends AppCompatActivity {
             newMsg.setTenTruyenDinhKem(attachedStory.getTenTruyen());
             newMsg.setAnhTruyenDinhKem(attachedStory.getAnhBiaUrl());
         }
-
-        // Nút gửi mờ đi để chống spam
         btnSend.setEnabled(false);
 
         db.collection("PhongChat").document("CongDong").collection("TinNhan").document(msgId)
@@ -373,12 +357,10 @@ public class CommunityChatActivity extends AppCompatActivity {
         if (currentUserId == null) return;
 
         if (isOnline) {
-            // Lưu 1 document trống với ID là ID của người dùng
             db.collection("PhongChat").document("CongDong")
                     .collection("OnlineUsers").document(currentUserId)
                     .set(new java.util.HashMap<>());
         } else {
-            // Xóa document đi khi thoát
             db.collection("PhongChat").document("CongDong")
                     .collection("OnlineUsers").document(currentUserId)
                     .delete();
@@ -393,7 +375,7 @@ public class CommunityChatActivity extends AppCompatActivity {
                     if (error != null) return;
 
                     if (value != null) {
-                        int count = value.size(); // Đếm tổng số document
+                        int count = value.size();
                         tvOnlineCount.setText(count + " người online");
                     }
                 });

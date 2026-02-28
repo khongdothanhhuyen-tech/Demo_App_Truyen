@@ -56,19 +56,24 @@ public class HomeActivity extends AppCompatActivity {
         ImageView imgSearch = findViewById(R.id.imgSearch);
         ImageView imgCommunityChat = findViewById(R.id.imgCommunityChat);
         ImageView imgLeaderBoard = findViewById(R.id.imgLeaderBoard);
-
+        ImageView imgChatBot = findViewById(R.id.imgChatBot);
         containerGenres = findViewById(R.id.containerGenres);
 
         imgSearch.setOnClickListener(v -> {
             startActivity(new Intent(HomeActivity.this, SearchActivity.class));
-            finish();
+
         });
+
         imgCommunityChat.setOnClickListener(v -> {
             startActivity(new Intent(HomeActivity.this, CommunityChatActivity.class));
-            finish();
         });
+
         imgLeaderBoard.setOnClickListener(v -> {
             startActivity(new Intent(HomeActivity.this, LeaderboardActivity.class));
+        });
+
+        imgChatBot.setOnClickListener(v -> {
+            startActivity(new Intent(HomeActivity.this, AIChatActivity.class));
         });
 
         setupBannerSlider();

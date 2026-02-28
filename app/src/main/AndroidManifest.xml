@@ -92,6 +92,10 @@
             android:name=".Activity.LeaderboardActivity"
             android:exported="false">
         </activity>
+        <activity
+            android:name=".Activity.AIChatActivity"
+            android:exported="false">
+        </activity>
 
 
 

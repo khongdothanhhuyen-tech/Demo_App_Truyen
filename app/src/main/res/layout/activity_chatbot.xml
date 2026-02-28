@@ -41,61 +41,13 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Bảng xếp hạng"
+                android:text="Chat cùng AI"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:textStyle="bold"/>
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/btnTatCa"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tất cả"
-                    android:textColor="@color/white"
-                    android:background="@drawable/custom_corners3"
-                    android:backgroundTint="@color/orange"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:paddingTop="6dp"
-                    android:paddingBottom="6dp"/>
-
-                <TextView
-                    android:id="@+id/btnThang"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tháng"
-                    android:textColor="@color/white"
-                    android:background="@drawable/custom_corners3"
-                    android:backgroundTint="#333333"
-                    android:layout_marginStart="8dp"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:paddingTop="6dp"
-                    android:paddingBottom="6dp"/>
-
-                <TextView
-                    android:id="@+id/btnTuan"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tuần"
-                    android:textColor="@color/white"
-                    android:background="@drawable/custom_corners3"
-                    android:backgroundTint="#333333"
-                    android:layout_marginStart="8dp"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:paddingTop="6dp"
-                    android:paddingBottom="6dp"/>
-            </LinearLayout>
         </LinearLayout>
-
     </LinearLayout>
+
     <View
         android:id="@+id/view"
         android:layout_width="match_parent"
@@ -103,15 +55,18 @@
         android:background="#0DFFFFFF"
         app:layout_constraintTop_toBottomOf="@id/layoutHeader" />
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvLeaderboard"
+        android:id="@+id/rvChat"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
         android:clipToPadding="false"
-        app:layout_constraintTop_toBottomOf="@id/view" />
-
+        app:layout_constraintTop_toBottomOf="@id/view"
+        app:layout_constraintBottom_toTopOf="@id/layoutInputContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
     <LinearLayout
+        android:id="@+id/layoutInputContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -119,6 +74,7 @@
         app:layout_constraintBottom_toBottomOf="parent">
 
         <LinearLayout
+            android:id="@+id/layoutPreviewStory"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -158,6 +114,37 @@
                 android:src="@android:drawable/ic_menu_close_clear_cancel"
                 app:tint="@color/white"
                 android:padding="4dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="bottom"
+            android:padding="12dp">
+
+            <EditText
+                android:id="@+id/edtMessage"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/custom_corners3"
+                android:backgroundTint="#2C2C2C"
+                android:hint="Hỏi Khí Linh AI...."
+                android:textColorHint="@color/gray_text"
+                android:textColor="@color/white"
+                android:padding="12dp"
+                android:maxLines="4"
+                android:inputType="textMultiLine"
+                android:layout_marginEnd="8dp"/>
+
+            <ImageView
+                android:id="@+id/btnSend"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@android:drawable/ic_menu_send"
+                android:padding="12dp"
+                app:tint="@color/white"/>
         </LinearLayout>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

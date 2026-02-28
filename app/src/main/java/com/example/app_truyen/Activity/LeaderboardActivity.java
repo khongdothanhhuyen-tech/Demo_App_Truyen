@@ -77,12 +77,11 @@ public class LeaderboardActivity extends AppCompatActivity {
 
         db.collection("Truyen")
                 .orderBy(orderByField, Query.Direction.DESCENDING)
-                .limit(20) // CHỈ LẤY TOP 20
+                .limit(20)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     listRankedStories.clear();
 
-                    // Khối logic này để ép số view về 0 nếu truyện đứng top tuần/tháng nhưng thực chất là do data cũ chưa bị reset
                     Calendar cal = Calendar.getInstance();
                     String currentMonthKey = cal.get(Calendar.YEAR) + "_" + (cal.get(Calendar.MONTH) + 1);
                     String currentWeekKey = cal.get(Calendar.YEAR) + "_" + cal.get(Calendar.WEEK_OF_YEAR);
