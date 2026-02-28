@@ -25,7 +25,6 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,7 +35,11 @@ public class ComicActivity extends AppCompatActivity {
     private AdapterStoryHori adapterComic;
     private ArrayList<Story> dsTruyen;
     private ArrayList<Story> dsTruyenGoc;
-    private final String [] listTheLoai = {"Hành động", "Tình cảm", "Học đường", "Phiêu lưu", "Sát thủ", "Kinh dị", "Hài hước", "Khoa học viễn tưởng", "Siêu anh hùng"};
+
+    // ĐỔI SANG LIST ĐỘNG THAY VÌ MẢNG CỨNG
+    private final List<String> danhSachTheLoai = new ArrayList<>();
+    private final List<String> listCategoryDisplay = new ArrayList<>();
+    private AdapterCategory adapterCategory;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,15 +55,13 @@ public class ComicActivity extends AppCompatActivity {
         dsTruyen = new ArrayList<>();
         dsTruyenGoc = new ArrayList<>();
 
-        adapterComic = new AdapterStoryHori(this, dsTruyen,false );
+        adapterComic = new AdapterStoryHori(this, dsTruyen, false);
         rvComic.setLayoutManager(new LinearLayoutManager(this));
         rvComic.setAdapter(adapterComic);
 
-        List<String> listCategoryDisplay = new ArrayList<>();
+        // Khởi tạo Adapter cho danh sách thể loại cuộn ngang
         listCategoryDisplay.add("Tất cả");
-        listCategoryDisplay.addAll(Arrays.asList(listTheLoai));
-
-        AdapterCategory adapterCategory = new AdapterCategory(this, listCategoryDisplay, category -> {
+        adapterCategory = new AdapterCategory(this, listCategoryDisplay, category -> {
             if (category.equals("Tất cả")) {
                 fetchStories(null);
             } else {
@@ -70,20 +71,25 @@ public class ComicActivity extends AppCompatActivity {
         rvCategories.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         rvCategories.setAdapter(adapterCategory);
 
+        // Tải danh sách thể loại động từ Firestore
+        loadCategoriesFromFirestore();
+
         // Xử lý nhấn vào lọc truyện theo nhiều thể loại
         cardFilter.setOnClickListener(v -> {
             BottomSheetDialog dialog = new BottomSheetDialog(ComicActivity.this);
-            View view = getLayoutInflater().inflate(R.layout.filter_layout , null );
+            View view = getLayoutInflater().inflate(R.layout.filter_layout, null);
             dialog.setContentView(view);
 
             ChipGroup chipGroupFilter = view.findViewById(R.id.cg_filter);
             Button btnApply = view.findViewById(R.id.btn_apply);
 
-            for (String genre : listTheLoai) {
+            // Sinh Chip tự động từ danh sách đã lấy từ Firestore
+            for (String genre : danhSachTheLoai) {
                 Chip chip = (Chip) getLayoutInflater().inflate(R.layout.item_chip, chipGroupFilter, false);
                 chip.setText(genre);
                 chipGroupFilter.addView(chip);
             }
+
             btnApply.setOnClickListener(v1 -> {
                 List<String> selectedGenres = new ArrayList<>();
                 for (int i = 0; i < chipGroupFilter.getChildCount(); i++) {
@@ -98,9 +104,31 @@ public class ComicActivity extends AppCompatActivity {
 
             dialog.show();
         });
+
         fetchAllStories();
         setupNavigation();
     }
+
+    // Hàm mới: Tải thể loại từ Database
+    private void loadCategoriesFromFirestore() {
+        db.collection("TheLoai").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                danhSachTheLoai.clear();
+                listCategoryDisplay.clear();
+                listCategoryDisplay.add("Tất cả"); // Luôn có mục Tất cả ở đầu
+
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    String categoryName = document.getId();
+                    danhSachTheLoai.add(categoryName);
+                    listCategoryDisplay.add(categoryName);
+                }
+                adapterCategory.notifyDataSetChanged(); // Cập nhật lại UI cuộn ngang
+            } else {
+                Toast.makeText(this, "Lỗi tải danh mục", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
     // Lấy tất cả truyện
     private void fetchAllStories() {
         db.collection("Truyen").get().addOnSuccessListener(queryDocumentSnapshots -> {
@@ -142,7 +170,7 @@ public class ComicActivity extends AppCompatActivity {
         }
     }
 
-    //Lọc truyện theo thể loại
+    // Lọc truyện theo 1 thể loại
     private void fetchStories(String genre) {
         Query query = db.collection("Truyen");
         if (genre != null) {
@@ -168,6 +196,7 @@ public class ComicActivity extends AppCompatActivity {
 
     // Xử lý thanh điều hướng
     private void setupNavigation() {
+        // (Giữ nguyên như cũ)
         bottomNavigationView.setSelectedItemId(R.id.nav_comic);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
@@ -175,16 +204,14 @@ public class ComicActivity extends AppCompatActivity {
             if (id == R.id.nav_home) {
                 startActivity(new Intent(ComicActivity.this, HomeActivity.class));
                 return true;
-            }
-            else if (id == R.id.nav_comic) {
+            } else if (id == R.id.nav_comic) {
                 NestedScrollView scrollView = findViewById(R.id.nestedScrollView);
                 if (scrollView != null) scrollView.smoothScrollTo(0, 0);
                 return true;
-            }
-            else if (id == R.id.nav_library) {
+            } else if (id == R.id.nav_library) {
                 startActivity(new Intent(ComicActivity.this, LibraryActivity.class));
                 return true;
-            }else if (id == R.id.nav_profile) {
+            } else if (id == R.id.nav_profile) {
                 startActivity(new Intent(ComicActivity.this, ProfileActivity.class));
                 return true;
             }

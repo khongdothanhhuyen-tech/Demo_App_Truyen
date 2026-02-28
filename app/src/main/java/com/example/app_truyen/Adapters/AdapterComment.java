@@ -101,8 +101,10 @@ public class AdapterComment extends RecyclerView.Adapter<AdapterComment.CommentV
 
         // Xử lý Xóa
         holder.itemView.setOnLongClickListener(v -> {
-            showDeleteDialog(comment, position);
-            return false;
+            if (currentUserId != null && currentUserId.equals(comment.getUid())) {
+                showDeleteDialog(comment, position);
+            }
+            return true;
         });
     }
 

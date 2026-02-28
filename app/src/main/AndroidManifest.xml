@@ -80,6 +80,23 @@
             android:exported="false">
         </activity>
         <activity android:name=".Activity.StoryHistoryActivity"/>
+        <activity
+            android:name=".Activity.AddCategoryActivity"
+            android:exported="false">
+        </activity>
+        <activity
+            android:name=".Activity.CommunityChatActivity"
+            android:exported="false">
+        </activity>
+        <activity
+            android:name=".Activity.LeaderboardActivity"
+            android:exported="false">
+        </activity>
+        <activity
+            android:name=".Activity.AIChatActivity"
+            android:exported="false">
+        </activity>
+
 
 
 

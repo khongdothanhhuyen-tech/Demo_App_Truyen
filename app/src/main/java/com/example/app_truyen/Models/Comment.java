@@ -12,6 +12,9 @@ public class Comment {
     private String noiDung;
     private List<String> danhSachLikes;
     private Timestamp ngayDang;
+    private String storyIdDinhKem;
+    private String tenTruyenDinhKem;
+    private String anhTruyenDinhKem;
 
     public Comment() {
         this.danhSachLikes = new ArrayList<>();
@@ -45,7 +48,29 @@ public class Comment {
     public Timestamp getNgayDang() { return ngayDang; }
     public void setNgayDang(Timestamp ngayDang) { this.ngayDang = ngayDang; }
 
+    public String getStoryIdDinhKem() {
+        return storyIdDinhKem;
+    }
 
+    public void setStoryIdDinhKem(String storyIdDinhKem) {
+        this.storyIdDinhKem = storyIdDinhKem;
+    }
+
+    public String getTenTruyenDinhKem() {
+        return tenTruyenDinhKem;
+    }
+
+    public void setTenTruyenDinhKem(String tenTruyenDinhKem) {
+        this.tenTruyenDinhKem = tenTruyenDinhKem;
+    }
+
+    public String getAnhTruyenDinhKem() {
+        return anhTruyenDinhKem;
+    }
+
+    public void setAnhTruyenDinhKem(String anhTruyenDinhKem) {
+        this.anhTruyenDinhKem = anhTruyenDinhKem;
+    }
     public List<String> getDanhSachLikes() {
         if (danhSachLikes == null) {
             return new ArrayList<>();

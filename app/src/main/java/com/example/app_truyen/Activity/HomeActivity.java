@@ -3,7 +3,10 @@ package com.example.app_truyen.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.widget.NestedScrollView;
@@ -29,6 +32,7 @@ public class HomeActivity extends AppCompatActivity {
     private ViewPager2 viewPagerBanner;
     private NestedScrollView nestedScrollView;
     private AdapterBannerStory adapterBanner;
+    private LinearLayout containerGenres;
 
     @Override
     protected void onPause() {
@@ -41,6 +45,7 @@ public class HomeActivity extends AppCompatActivity {
         super.onResume();
         sliderHandler.postDelayed(sliderRunnable, 3000);
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,75 +54,87 @@ public class HomeActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         nestedScrollView = findViewById(R.id.nestedScrollView);
         ImageView imgSearch = findViewById(R.id.imgSearch);
+        ImageView imgCommunityChat = findViewById(R.id.imgCommunityChat);
+        ImageView imgLeaderBoard = findViewById(R.id.imgLeaderBoard);
+        ImageView imgChatBot = findViewById(R.id.imgChatBot);
+        containerGenres = findViewById(R.id.containerGenres);
 
         imgSearch.setOnClickListener(v -> {
             startActivity(new Intent(HomeActivity.this, SearchActivity.class));
-            finish();
+
+        });
+
+        imgCommunityChat.setOnClickListener(v -> {
+            startActivity(new Intent(HomeActivity.this, CommunityChatActivity.class));
+        });
+
+        imgLeaderBoard.setOnClickListener(v -> {
+            startActivity(new Intent(HomeActivity.this, LeaderboardActivity.class));
+        });
+
+        imgChatBot.setOnClickListener(v -> {
+            startActivity(new Intent(HomeActivity.this, AIChatActivity.class));
         });
 
         setupBannerSlider();
         setupAllRecyclerViews();
         setupBottomNavigation();
     }
-    // Hàm cài đặt RecycleView
+
     private void setupAllRecyclerViews() {
         RecyclerView rvHori = findViewById(R.id.rv_truyen);
-        ArrayList<Story> dsTruyenHori = new ArrayList<>();
-        AdapterStoryVerti adapterVerti = new AdapterStoryVerti(this, dsTruyenHori);
-        rvHori.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        rvHori.setAdapter(adapterVerti);
+        if (rvHori != null) {
+            ArrayList<Story> dsTruyenHori = new ArrayList<>();
+            AdapterStoryVerti adapterVerti = new AdapterStoryVerti(this, dsTruyenHori);
+            rvHori.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+            rvHori.setAdapter(adapterVerti);
+            fetchStories(dsTruyenHori, adapterVerti, null);
+        }
 
-        fetchStories(dsTruyenHori, adapterVerti, null);
-
-        ArrayList<Story> dsHanhDong = new ArrayList<>();
-        AdapterStoryVerti adtHanhDong = new AdapterStoryVerti(this, dsHanhDong);
-        setupGenreStory(R.id.rv_truyenHanhDong, dsHanhDong, adtHanhDong, "Hành động");
-
-        ArrayList<Story> dsTinhCam = new ArrayList<>();
-        AdapterStoryVerti adtTinhCam = new AdapterStoryVerti(this, dsTinhCam);
-        setupGenreStory(R.id.rv_truyenTinhCam, dsTinhCam, adtTinhCam, "Tình cảm");
-
-        ArrayList<Story> dsPhieuLuu = new ArrayList<>();
-        AdapterStoryVerti adtPhieuLuu = new AdapterStoryVerti(this, dsPhieuLuu);
-        setupGenreStory(R.id.rv_truyenPhieuLuu, dsPhieuLuu, adtPhieuLuu, "Phiêu lưu");
-
-        ArrayList<Story> dsSatThu = new ArrayList<>();
-        AdapterStoryVerti adtSatThu = new AdapterStoryVerti(this, dsSatThu);
-        setupGenreStory(R.id.rv_truyenSatThu, dsSatThu, adtSatThu, "Sát thủ");
-
-        ArrayList<Story> dsKinhDi = new ArrayList<>();
-        AdapterStoryVerti adtKinhDi = new AdapterStoryVerti(this, dsKinhDi);
-        setupGenreStory(R.id.rv_truyenKinhDi, dsKinhDi, adtKinhDi, "Kinh dị");
+        db.collection("TheLoai").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    String genre = document.getId();
+                    createDynamicGenreSection(genre);
+                }
+            }
+        });
     }
 
-    // Hàm xử lý hiển thị thể loại truyện
-    private void setupGenreStory(int recyclerViewId, ArrayList<Story> list, AdapterStoryVerti adapter, String genre) {
-        RecyclerView rv = findViewById(recyclerViewId);
-        rv.setLayoutManager(new GridLayoutManager(this, 3));
-        rv.setAdapter(adapter);
-        fetchStories(list, adapter, genre);
+    // Hàm sinh tự động UI cho từng Thể Loại
+    private void createDynamicGenreSection(String genre) {
+        View genreView = getLayoutInflater().inflate(R.layout.item_home_genre, containerGenres, false);
+
+        TextView tvTitle = genreView.findViewById(R.id.tvGenreTitle);
+        RecyclerView rvStories = genreView.findViewById(R.id.rvGenreStories);
+
+        tvTitle.setText("Truyện " + genre);
+
+        ArrayList<Story> listStories = new ArrayList<>();
+        AdapterStoryVerti adapter = new AdapterStoryVerti(this, listStories);
+
+        rvStories.setLayoutManager(new GridLayoutManager(this, 3));
+        rvStories.setAdapter(adapter);
+
+        fetchStories(listStories, adapter, genre);
+        containerGenres.addView(genreView);
     }
 
-    // Hàm xử lý tìm thể loại truyện
-    private void fetchStories(ArrayList<Story> list, AdapterStoryVerti adapter , String genre) {
+    // Hàm gọi API lấy truyện (đã được tối ưu để tránh hiện View rỗng)
+    private void fetchStories(ArrayList<Story> list, AdapterStoryVerti adapter, String genre) {
         Query query = db.collection("Truyen");
         if (genre != null) {
             query = query.whereArrayContains("theLoai", genre);
         }
-        query.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
+        query.limit(6).get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && !task.getResult().isEmpty()) {
                 list.clear();
-                if (!task.getResult().isEmpty()) {
-                    for (QueryDocumentSnapshot document : task.getResult()) {
-                        Story truyen = document.toObject(Story.class);
-                        list.add(truyen);
-                    }
-                } else {
-                    Toast.makeText(this, "Không có dữ liệu", Toast.LENGTH_SHORT).show();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    Story truyen = document.toObject(Story.class);
+                    list.add(truyen);
                 }
                 adapter.notifyDataSetChanged();
-            } else {
-                Toast.makeText(this, "Lỗi tải dữ liệu", Toast.LENGTH_SHORT).show();
+            } else if (genre != null) {
             }
         });
     }
