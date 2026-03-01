@@ -134,6 +134,7 @@
                     android:orientation="vertical"
                     android:gravity="center_horizontal">
                     <ImageView
+                        android:id="@+id/imgForum"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/community" />

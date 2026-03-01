@@ -96,6 +96,14 @@
             android:name=".Activity.AIChatActivity"
             android:exported="false">
         </activity>
+        <activity
+            android:name=".Activity.ForumActivity"
+            android:exported="false">
+        </activity>
+        <activity
+            android:name=".Activity.CreatePostActivity"
+            android:exported="false">
+        </activity>
 
 
 

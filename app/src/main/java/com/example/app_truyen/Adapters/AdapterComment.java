@@ -27,21 +27,34 @@ public class AdapterComment extends RecyclerView.Adapter<AdapterComment.CommentV
     private final Context context;
     private final List<Comment> listComments;
     private final String currentUserId;
-    private final String storyId;
     private final int orangeColor;
     private final int grayColor;
+    private final String targetId;
+    private final String collectionPath;
+    private boolean isAdmin = false;
 
-    public AdapterComment(Context context, List<Comment> listComments, String currentUserId, String storyId) {
+    public AdapterComment(Context context, List<Comment> listComments, String currentUserId, String targetId, String collectionPath) {
         this.context = context;
         this.listComments = listComments;
         this.currentUserId = currentUserId;
-        this.storyId = storyId;
+        this.targetId = targetId;
+        this.collectionPath = collectionPath;
         this.orangeColor = ContextCompat.getColor(context, R.color.orange);
         this.grayColor = ContextCompat.getColor(context, R.color.gray_text);
+        checkAdminStatus();
+    }
+    private void checkAdminStatus() {
+        if (currentUserId == null) return;
+        FirebaseFirestore.getInstance().collection("TaiKhoan").document(currentUserId)
+                .get().addOnSuccessListener(doc -> {
+                    if (doc.exists() && "admin".equals(doc.getString("role"))) {
+                        isAdmin = true;
+                    }
+                });
     }
     public static class CommentViewHolder extends RecyclerView.ViewHolder {
         TextView tvUserEmail, tvContent, tvTime, tvBtnLike, tvBtnReply, tvLikeCount;
-        ImageView imgProfile, imgHeartIcon;
+        ImageView imgProfile, imgHeartIcon, imgCommentImage;
         LinearLayout layoutLikeCount;
 
         public CommentViewHolder(@NonNull View itemView) {
@@ -52,6 +65,7 @@ public class AdapterComment extends RecyclerView.Adapter<AdapterComment.CommentV
             tvBtnLike = itemView.findViewById(R.id.tvBtnLike);
             tvBtnReply = itemView.findViewById(R.id.tvBtnReply);
             tvLikeCount = itemView.findViewById(R.id.tvLikeCount);
+            imgCommentImage = itemView.findViewById(R.id.imgCommentImage);
             imgProfile = itemView.findViewById(R.id.imgProfile);
             imgHeartIcon = itemView.findViewById(R.id.imgHeartIcon);
             layoutLikeCount = itemView.findViewById(R.id.layoutLikeCount);
@@ -98,11 +112,18 @@ public class AdapterComment extends RecyclerView.Adapter<AdapterComment.CommentV
             }
             notifyItemChanged(position);
         });
-
+        if (comment.getCommentImage() != null && !comment.getCommentImage().isEmpty()) {
+            holder.imgCommentImage.setVisibility(View.VISIBLE);
+            Glide.with(context).load(comment.getCommentImage()).into(holder.imgCommentImage);
+        } else {
+            holder.imgCommentImage.setVisibility(View.GONE);
+        }
         // Xử lý Xóa
         holder.itemView.setOnLongClickListener(v -> {
-            if (currentUserId != null && currentUserId.equals(comment.getUid())) {
+            if (currentUserId != null && (currentUserId.equals(comment.getUid()) || isAdmin)) {
                 showDeleteDialog(comment, position);
+            } else {
+                Toast.makeText(context, "Chỉ chủ nhân hoặc Admin mới được xóa!", Toast.LENGTH_SHORT).show();
             }
             return true;
         });
@@ -160,14 +181,14 @@ public class AdapterComment extends RecyclerView.Adapter<AdapterComment.CommentV
     // Hàm xử lý người dùng bấm thích
     private void addLikeToFirestore(String commentId) {
         FirebaseFirestore.getInstance()
-                .collection("Truyen").document(storyId)
+                .collection(collectionPath).document(targetId)
                 .collection("BinhLuan").document(commentId)
                 .update("danhSachLikes", FieldValue.arrayUnion(currentUserId));
     }
-    // Hàm xử lý người dùng bỏ thích
+
     private void removeLikeFromFirestore(String commentId) {
         FirebaseFirestore.getInstance()
-                .collection("Truyen").document(storyId)
+                .collection(collectionPath).document(targetId)
                 .collection("BinhLuan").document(commentId)
                 .update("danhSachLikes", FieldValue.arrayRemove(currentUserId));
     }
@@ -176,26 +197,19 @@ public class AdapterComment extends RecyclerView.Adapter<AdapterComment.CommentV
     private void showDeleteDialog(Comment comment, int position) {
         new AlertDialog.Builder(context)
                 .setTitle("Xóa bình luận")
-                .setMessage("Bạn muốn xóa bình luận này?")
                 .setPositiveButton("Xóa", (dialog, which) -> {
                     FirebaseFirestore.getInstance()
-                            .collection("Truyen").document(storyId)
+                            .collection(collectionPath).document(targetId)
                             .collection("BinhLuan").document(comment.getId())
-                            .delete()
-                            .addOnSuccessListener(aVoid -> {
+                            .delete().addOnSuccessListener(aVoid -> {
                                 listComments.remove(position);
                                 notifyItemRemoved(position);
-                                Toast.makeText(context, "Đã xóa!", Toast.LENGTH_SHORT).show();
                             });
-                })
-                .setNegativeButton("Hủy", null)
-                .show();
+                }).show();
     }
 
     @Override
     public int getItemCount() {
         return listComments.size();
     }
-
-
 }

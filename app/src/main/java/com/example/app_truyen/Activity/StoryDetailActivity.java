@@ -55,7 +55,14 @@ public class StoryDetailActivity extends AppCompatActivity {
         rvDsChuong.setLayoutManager(new LinearLayoutManager(this));
         rvDsChuong.setAdapter(adapterChapter);
 
-        loadStoryData();
+        db = FirebaseFirestore.getInstance();
+        currentStory = (Story) getIntent().getSerializableExtra("TRUYEN_DATA");
+
+        if (currentStory != null) {
+            increaseViewCount(currentStory.getMaTruyen());
+            loadStoryData();
+        }
+
 
         imgBack.setOnClickListener(v -> finish());
 
@@ -176,6 +183,40 @@ public class StoryDetailActivity extends AppCompatActivity {
                                 );
                             }
                         });
+                    }
+                });
+    }
+    private void increaseViewCount(String maTruyen) {
+        if (maTruyen == null || maTruyen.isEmpty()) return;
+
+        db.collection("Truyen").document(maTruyen).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        Story story = documentSnapshot.toObject(Story.class);
+                        if (story == null) return;
+
+                        // 1. LẤY MỐC THỜI GIAN HIỆN TẠI
+                        Calendar cal = Calendar.getInstance();
+                        String currentMonthKey = cal.get(Calendar.YEAR) + "_" + (cal.get(Calendar.MONTH) + 1);
+                        String currentWeekKey = cal.get(Calendar.YEAR) + "_" + cal.get(Calendar.WEEK_OF_YEAR);
+
+                        // 2. XỬ LÝ AN TOÀN CHO TRUYỆN CŨ CHƯA CÓ KEY
+                        String dbMonthKey = story.getMonthKey() != null ? story.getMonthKey() : "";
+                        String dbWeekKey = story.getWeekKey() != null ? story.getWeekKey() : "";
+
+                        // 3. TÍNH TOÁN LƯỢT XEM MỚI
+                        int newViewAll = story.getViewCountAll() + 1;
+                        int newViewMonth = currentMonthKey.equals(dbMonthKey) ? story.getViewCountMonth() + 1 : 1;
+                        int newViewWeek = currentWeekKey.equals(dbWeekKey) ? story.getViewCountWeek() + 1 : 1;
+
+                        // 4. CẬP NHẬT LÊN FIREBASE
+                        db.collection("Truyen").document(maTruyen).update(
+                                "viewCountAll", newViewAll,
+                                "viewCountMonth", newViewMonth,
+                                "viewCountWeek", newViewWeek,
+                                "monthKey", currentMonthKey,
+                                "weekKey", currentWeekKey
+                        );
                     }
                 });
     }

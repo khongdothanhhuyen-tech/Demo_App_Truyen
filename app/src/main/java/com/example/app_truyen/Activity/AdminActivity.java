@@ -31,6 +31,7 @@ public class AdminActivity extends AppCompatActivity {
         Button btnAddStory = findViewById(R.id.btnAddStory);
         Button btnAddCategory = findViewById(R.id.btnAddCategory);
         Button btnChat = findViewById(R.id.btnChat);
+        Button btnForum = findViewById(R.id.btnForum);
         RecyclerView rvStory = findViewById(R.id.rvStory);
 
         progressBar = findViewById(R.id.progressBar);
@@ -55,6 +56,9 @@ public class AdminActivity extends AppCompatActivity {
 
         btnChat.setOnClickListener(v -> {
             startActivity(new Intent(AdminActivity.this, CommunityChatActivity.class));
+        });
+        btnForum.setOnClickListener(v -> {
+            startActivity(new Intent(AdminActivity.this, ForumActivity.class));
         });
 
     }

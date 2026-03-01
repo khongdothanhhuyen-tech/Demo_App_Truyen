@@ -35,7 +35,19 @@
             android:layout_height="wrap_content"
             android:backgroundTint="@color/orange"
             android:text="Phòng chat"
-            android:layout_margin="20dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="20dp"
+            android:textColor="@color/white"/>
+        <Button
+            android:id="@+id/btnForum"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/orange"
+            android:text="Diễn đàn thảo luận"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginTop="20dp"
             android:textColor="@color/white"/>
         <View
             android:layout_margin="10dp"

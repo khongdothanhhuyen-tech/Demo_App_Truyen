@@ -57,6 +57,7 @@ public class HomeActivity extends AppCompatActivity {
         ImageView imgCommunityChat = findViewById(R.id.imgCommunityChat);
         ImageView imgLeaderBoard = findViewById(R.id.imgLeaderBoard);
         ImageView imgChatBot = findViewById(R.id.imgChatBot);
+        ImageView imgForum = findViewById(R.id.imgForum);
         containerGenres = findViewById(R.id.containerGenres);
 
         imgSearch.setOnClickListener(v -> {
@@ -74,6 +75,9 @@ public class HomeActivity extends AppCompatActivity {
 
         imgChatBot.setOnClickListener(v -> {
             startActivity(new Intent(HomeActivity.this, AIChatActivity.class));
+        });
+        imgForum.setOnClickListener(v -> {
+            startActivity(new Intent(HomeActivity.this, ForumActivity.class));
         });
 
         setupBannerSlider();
