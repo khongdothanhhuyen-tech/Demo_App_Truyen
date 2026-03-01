@@ -1,6 +1,7 @@
 package com.example.app_truyen.Adapters;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -8,12 +9,16 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.app_truyen.Activity.CommentActivity;
@@ -37,9 +42,6 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
         checkAdminStatus();
     }
 
-    // ============================================
-    // HÀM MỚI: Cập nhật danh sách khi tìm kiếm
-    // ============================================
     public void setFilter(List<Post> filteredList) {
         this.listPosts = filteredList;
         notifyDataSetChanged();
@@ -68,7 +70,7 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
         Post post = listPosts.get(position);
         if (post == null) return;
 
-        // Xử lý hiển thị tên (Dò tìm lại từ Email)
+        // Xử lý tên
         String displayName = post.getUserName();
         if (displayName == null || displayName.trim().isEmpty() || displayName.equals("Đạo hữu ẩn danh") || displayName.equals("User")) {
             holder.tvUserName.setText("Đang tải...");
@@ -76,14 +78,9 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
                     .get().addOnSuccessListener(doc -> {
                         if (doc.exists()) {
                             String emailDb = doc.getString("email");
-                            if (emailDb != null && emailDb.contains("@")) {
-                                holder.tvUserName.setText(emailDb.split("@")[0]);
-                            } else {
-                                holder.tvUserName.setText("Đạo hữu");
-                            }
-                        } else {
-                            holder.tvUserName.setText("Đạo hữu");
-                        }
+                            if (emailDb != null && emailDb.contains("@")) holder.tvUserName.setText(emailDb.split("@")[0]);
+                            else holder.tvUserName.setText("Đạo hữu");
+                        } else holder.tvUserName.setText("Đạo hữu");
                     });
         } else {
             holder.tvUserName.setText(displayName);
@@ -91,16 +88,65 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
 
         holder.tvContent.setText(post.getContent());
         holder.tvPostTime.setText(getRelativeTime(post.getTimestamp()));
-
         Glide.with(context).load(post.getUserAvatar()).placeholder(R.drawable.app_icon).circleCrop().into(holder.imgUserAvt);
 
-        if (post.getPostImage() != null && !post.getPostImage().isEmpty()) {
-            holder.imgPostContent.setVisibility(View.VISIBLE);
-            Glide.with(context).load(post.getPostImage()).into(holder.imgPostContent);
+        //  XỬ LÝ LƯỚI ĐA ẢNH VÀ CLICK XEM ẢNH
+        List<String> images = post.getPostImages();
+        if (images != null && !images.isEmpty()) {
+            holder.layoutImageGrid.setVisibility(View.VISIBLE);
+            int size = images.size();
+
+            holder.row1.setVisibility(View.VISIBLE);
+            holder.row2.setVisibility(View.GONE);
+            holder.imgPost1.setVisibility(View.GONE);
+            holder.imgPost2.setVisibility(View.GONE);
+            holder.imgPost3.setVisibility(View.GONE);
+            holder.framePost4.setVisibility(View.GONE);
+            holder.tvMoreImages.setVisibility(View.GONE);
+
+            // Bắt sự kiện click để mở Gallery xem ảnh
+            holder.imgPost1.setOnClickListener(v -> showImageGalleryDialog(images, 0));
+            holder.imgPost2.setOnClickListener(v -> showImageGalleryDialog(images, 1));
+            holder.imgPost3.setOnClickListener(v -> showImageGalleryDialog(images, 2));
+            holder.framePost4.setOnClickListener(v -> showImageGalleryDialog(images, 3));
+
+            if (size == 1) {
+                holder.imgPost1.setVisibility(View.VISIBLE);
+                Glide.with(context).load(images.get(0)).into(holder.imgPost1);
+            } else if (size == 2) {
+                holder.imgPost1.setVisibility(View.VISIBLE);
+                holder.imgPost2.setVisibility(View.VISIBLE);
+                Glide.with(context).load(images.get(0)).into(holder.imgPost1);
+                Glide.with(context).load(images.get(1)).into(holder.imgPost2);
+            } else if (size == 3) {
+                holder.row2.setVisibility(View.VISIBLE);
+                holder.imgPost1.setVisibility(View.VISIBLE);
+                holder.imgPost3.setVisibility(View.VISIBLE);
+                holder.framePost4.setVisibility(View.VISIBLE);
+                Glide.with(context).load(images.get(0)).into(holder.imgPost1);
+                Glide.with(context).load(images.get(1)).into(holder.imgPost3);
+                Glide.with(context).load(images.get(2)).into(holder.imgPost4);
+            } else {
+                holder.row2.setVisibility(View.VISIBLE);
+                holder.imgPost1.setVisibility(View.VISIBLE);
+                holder.imgPost2.setVisibility(View.VISIBLE);
+                holder.imgPost3.setVisibility(View.VISIBLE);
+                holder.framePost4.setVisibility(View.VISIBLE);
+                Glide.with(context).load(images.get(0)).into(holder.imgPost1);
+                Glide.with(context).load(images.get(1)).into(holder.imgPost2);
+                Glide.with(context).load(images.get(2)).into(holder.imgPost3);
+                Glide.with(context).load(images.get(3)).into(holder.imgPost4);
+
+                if (size > 4) {
+                    holder.tvMoreImages.setVisibility(View.VISIBLE);
+                    holder.tvMoreImages.setText("+" + (size - 4));
+                }
+            }
         } else {
-            holder.imgPostContent.setVisibility(View.GONE);
+            holder.layoutImageGrid.setVisibility(View.GONE);
         }
 
+        // Like & Comment
         List<String> likes = post.getLikes();
         int likeCount = (likes != null) ? likes.size() : 0;
         holder.tvLikeStats.setText(likeCount + " Lượt thích");
@@ -119,13 +165,9 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
                             FieldValue.arrayRemove(currentUserId) : FieldValue.arrayUnion(currentUserId));
         });
 
-        // BẤM VÀO SỐ LƯỢT THÍCH ĐỂ XEM AI ĐÃ TIM
         holder.tvLikeStats.setOnClickListener(v -> {
-            if (likes != null && !likes.isEmpty()) {
-                showLikersDialog(likes);
-            } else {
-                Toast.makeText(context, "Chưa có lượt thích nào", Toast.LENGTH_SHORT).show();
-            }
+            if (likes != null && !likes.isEmpty()) showLikersDialog(likes);
+            else Toast.makeText(context, "Chưa có lượt thích nào", Toast.LENGTH_SHORT).show();
         });
 
         holder.btnCommentPost.setOnClickListener(v -> {
@@ -138,45 +180,121 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
         FirebaseFirestore.getInstance().collection("DienDan").document(post.getPostId())
                 .collection("BinhLuan")
                 .addSnapshotListener((value, error) -> {
-                    if (value != null) {
-                        holder.tvCommentStats.setText(value.size() + " Bình luận");
-                    }
+                    if (value != null) holder.tvCommentStats.setText(value.size() + " Bình luận");
                 });
 
-        // Nhấn giữ để xóa bài viết
         holder.itemView.setOnLongClickListener(v -> {
             if (post.getUserId().equals(currentUserId) || isAdmin) {
-                new AlertDialog.Builder(context)
-                        .setTitle("Xóa bài viết")
+                new AlertDialog.Builder(context).setTitle("Xóa bài viết")
                         .setMessage("Đạo hữu có chắc chắn muốn xóa bài viết này không?")
                         .setPositiveButton("Xóa", (dialog, which) -> {
                             FirebaseFirestore.getInstance().collection("DienDan").document(post.getPostId()).delete()
                                     .addOnSuccessListener(aVoid -> Toast.makeText(context, "Đã xóa bài viết!", Toast.LENGTH_SHORT).show());
                         }).setNegativeButton("Hủy", null).show();
-            } else {
-                Toast.makeText(context, "Đạo hữu không có quyền xóa bài viết này!", Toast.LENGTH_SHORT).show();
-            }
+            } else Toast.makeText(context, "Không có quyền xóa bài!", Toast.LENGTH_SHORT).show();
             return true;
         });
     }
 
-    // Hàm tạo giao diện danh sách người thích
+    // ===== HÀM TẠO TRÌNH XEM ẢNH TOÀN MÀN HÌNH (GALLERY) =====
+    private void showImageGalleryDialog(List<String> images, int startIndex) {
+        Dialog dialog = new Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+
+        RelativeLayout rootLayout = new RelativeLayout(context);
+        rootLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        rootLayout.setBackgroundColor(Color.BLACK);
+
+        // RecyclerView cấu hình lướt ngang như ViewPager
+        RecyclerView rv = new RecyclerView(context);
+        rv.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
+        rv.setLayoutManager(layoutManager);
+
+        // PagerSnapHelper giúp vuốt ảnh dính từng khung hình một (như Facebook)
+        PagerSnapHelper snapHelper = new PagerSnapHelper();
+        snapHelper.attachToRecyclerView(rv);
+
+        // Số thứ tự ảnh (Ví dụ: 1 / 5)
+        TextView tvIndicator = new TextView(context);
+        RelativeLayout.LayoutParams tvParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tvParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        tvParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        tvParams.topMargin = 50;
+        tvIndicator.setLayoutParams(tvParams);
+        tvIndicator.setTextColor(Color.WHITE);
+        tvIndicator.setTextSize(16);
+        tvIndicator.setText((startIndex + 1) + " / " + images.size());
+
+        // Adapter tải ảnh vào RecyclerView
+        rv.setAdapter(new RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+            @NonNull
+            @Override
+            public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                ImageView iv = new ImageView(context);
+                iv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                iv.setScaleType(ImageView.ScaleType.FIT_CENTER); // Căn ảnh vừa màn hình, không bị cắt
+                return new RecyclerView.ViewHolder(iv) {};
+            }
+
+            @Override
+            public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+                ImageView iv = (ImageView) holder.itemView;
+                Glide.with(context).load(images.get(position)).into(iv);
+            }
+
+            @Override
+            public int getItemCount() {
+                return images.size();
+            }
+        });
+
+        // Lắng nghe sự kiện lướt để cập nhật số thứ tự
+        rv.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    int pos = layoutManager.findFirstVisibleItemPosition();
+                    tvIndicator.setText((pos + 1) + " / " + images.size());
+                }
+            }
+        });
+
+        // Cuộn đến ảnh người dùng vừa click
+        rv.scrollToPosition(startIndex);
+
+        // Nút X (Đóng)
+        ImageView btnClose = new ImageView(context);
+        RelativeLayout.LayoutParams closeParams = new RelativeLayout.LayoutParams(120, 120);
+        closeParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        closeParams.addRule(RelativeLayout.ALIGN_PARENT_START);
+        closeParams.topMargin = 40;
+        closeParams.leftMargin = 40;
+        btnClose.setLayoutParams(closeParams);
+        btnClose.setImageResource(R.drawable.ic_back1);
+        btnClose.setColorFilter(Color.WHITE);
+        btnClose.setPadding(30, 30, 30, 30);
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+
+        rootLayout.addView(rv);
+        rootLayout.addView(tvIndicator);
+        rootLayout.addView(btnClose);
+
+        dialog.setContentView(rootLayout);
+        dialog.show();
+    }
+
     private void showLikersDialog(List<String> uids) {
         com.google.android.material.bottomsheet.BottomSheetDialog bottomSheetDialog =
                 new com.google.android.material.bottomsheet.BottomSheetDialog(context);
-
-        // 1. Tạo Layout
         LinearLayout mainLayout = new LinearLayout(context);
         mainLayout.setOrientation(LinearLayout.VERTICAL);
-
-        // Bo góc
         android.graphics.drawable.GradientDrawable shape = new android.graphics.drawable.GradientDrawable();
         shape.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-        shape.setColor(android.graphics.Color.parseColor("#1E1E1E"));
+        shape.setColor(Color.parseColor("#1E1E1E"));
         shape.setCornerRadii(new float[]{60, 60, 60, 60, 0, 0, 0, 0});
         mainLayout.setBackground(shape);
 
-        // 2. Tạo thanh gạt
         View handle = new View(context);
         int handleWidth = (int) (40 * context.getResources().getDisplayMetrics().density);
         int handleHeight = (int) (5 * context.getResources().getDisplayMetrics().density);
@@ -186,73 +304,51 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
         handle.setLayoutParams(handleParams);
         android.graphics.drawable.GradientDrawable handleShape = new android.graphics.drawable.GradientDrawable();
         handleShape.setCornerRadius(50);
-        handleShape.setColor(android.graphics.Color.parseColor("#555555"));
+        handleShape.setColor(Color.parseColor("#555555"));
         handle.setBackground(handleShape);
         mainLayout.addView(handle);
 
-        // 3. Tiêu đề
         TextView tvHeader = new TextView(context);
         tvHeader.setText("Những người đã thích (" + uids.size() + ")");
-        tvHeader.setTextColor(android.graphics.Color.WHITE);
+        tvHeader.setTextColor(Color.WHITE);
         tvHeader.setTextSize(18);
         tvHeader.setTypeface(null, android.graphics.Typeface.BOLD);
         tvHeader.setGravity(Gravity.CENTER);
         tvHeader.setPadding(0, 40, 0, 30);
         mainLayout.addView(tvHeader);
 
-        // Đường kẻ ngang phân cách
-        View divider = new View(context);
-        divider.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 2));
-        divider.setBackgroundColor(android.graphics.Color.parseColor("#333333"));
-        mainLayout.addView(divider);
-
-        // 4. Tạo ScrollView chứa danh sách
         ScrollView scrollView = new ScrollView(context);
         int maxHeight = (int) (context.getResources().getDisplayMetrics().heightPixels * 0.6);
         scrollView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, maxHeight));
-
         LinearLayout listContainer = new LinearLayout(context);
         listContainer.setOrientation(LinearLayout.VERTICAL);
         listContainer.setPadding(30, 20, 30, 40);
         scrollView.addView(listContainer);
         mainLayout.addView(scrollView);
-
         bottomSheetDialog.setContentView(mainLayout);
         bottomSheetDialog.show();
 
-        // 5. Load dữ liệu người dùng
         for (String uid : uids) {
             FirebaseFirestore.getInstance().collection("TaiKhoan").document(uid).get().addOnSuccessListener(doc -> {
                 if (doc.exists()) {
                     String email = doc.getString("email");
                     String avatarUrl = doc.getString("avatarUrl");
                     String displayName = doc.getString("tenHienThi");
-
-                    // Lấy tên ưu tiên: tenHienThi -> cắt email
                     String name = (displayName != null && !displayName.trim().isEmpty()) ? displayName
                             : ((email != null && email.contains("@")) ? email.split("@")[0] : "Đạo hữu");
 
-                    // Layout từng dòng
                     LinearLayout row = new LinearLayout(context);
                     row.setOrientation(LinearLayout.HORIZONTAL);
                     row.setGravity(Gravity.CENTER_VERTICAL);
                     row.setPadding(20, 25, 20, 25);
-
-                    // Hiệu ứng click (Ripple effect)
-                    android.util.TypedValue outValue = new android.util.TypedValue();
-                    context.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
-                    row.setBackgroundResource(outValue.resourceId);
-
-                    // Ảnh Avatar
                     ImageView imgAvatar = new ImageView(context);
-                    int size = (int) (45 * context.getResources().getDisplayMetrics().density); // Tăng size lên 45dp
+                    int size = (int) (45 * context.getResources().getDisplayMetrics().density);
                     imgAvatar.setLayoutParams(new LinearLayout.LayoutParams(size, size));
                     Glide.with(context).load(avatarUrl).placeholder(R.drawable.app_icon).circleCrop().into(imgAvatar);
 
-                    // Tên người dùng
                     TextView tvName = new TextView(context);
                     tvName.setText(name);
-                    tvName.setTextColor(android.graphics.Color.parseColor("#EEEEEE"));
+                    tvName.setTextColor(Color.parseColor("#EEEEEE"));
                     tvName.setTextSize(16);
                     tvName.setTypeface(null, android.graphics.Typeface.BOLD);
                     tvName.setPadding(40, 0, 0, 0);
@@ -279,8 +375,13 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
 
     public static class PostViewHolder extends RecyclerView.ViewHolder {
         TextView tvUserName, tvContent, tvLikeStats, tvCommentStats, tvPostTime;
-        ImageView imgUserAvt, imgPostContent, imgLikeIcon;
+        ImageView imgUserAvt, imgLikeIcon;
         View btnLikePost, btnCommentPost;
+
+        LinearLayout layoutImageGrid, row1, row2;
+        ImageView imgPost1, imgPost2, imgPost3, imgPost4;
+        FrameLayout framePost4;
+        TextView tvMoreImages;
 
         public PostViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -290,10 +391,19 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
             tvLikeStats = itemView.findViewById(R.id.tvLikeStats);
             tvCommentStats = itemView.findViewById(R.id.tvCommentStats);
             imgUserAvt = itemView.findViewById(R.id.imgUserAvt);
-            imgPostContent = itemView.findViewById(R.id.imgPostContent);
             imgLikeIcon = itemView.findViewById(R.id.imgLikeIcon);
             btnLikePost = itemView.findViewById(R.id.btnLikePost);
             btnCommentPost = itemView.findViewById(R.id.btnCommentPost);
+
+            layoutImageGrid = itemView.findViewById(R.id.layoutImageGrid);
+            row1 = itemView.findViewById(R.id.row1);
+            row2 = itemView.findViewById(R.id.row2);
+            imgPost1 = itemView.findViewById(R.id.imgPost1);
+            imgPost2 = itemView.findViewById(R.id.imgPost2);
+            imgPost3 = itemView.findViewById(R.id.imgPost3);
+            imgPost4 = itemView.findViewById(R.id.imgPost4);
+            framePost4 = itemView.findViewById(R.id.framePost4);
+            tvMoreImages = itemView.findViewById(R.id.tvMoreImages);
         }
     }
 }

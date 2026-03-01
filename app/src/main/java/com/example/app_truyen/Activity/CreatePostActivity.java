@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,6 +28,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import okhttp3.MediaType;
@@ -40,21 +43,34 @@ import retrofit2.Response;
 
 public class CreatePostActivity extends AppCompatActivity {
     private EditText edtContent;
-    private ImageView imgPreview, imgUserAvt;
+    private ImageView imgUserAvt;
     private TextView tvUserName;
     private ProgressBar progressBar;
-    private Uri selectedImageUri;
+    private LinearLayout layoutSelectedImages; // KHUNG CHỨA ẢNH MỚI
+
+    private List<Uri> dsUriAnh = new ArrayList<>(); // Danh sách Uri theo chuẩn của bạn
+    private List<String> dsLinkAnhCloudinary = new ArrayList<>(); // Danh sách Link
+
     private String currentUserId, currentUserName, currentUserAvatarUrl = "";
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private CloudinaryService cloudinaryService;
 
-    private final ActivityResultLauncher<Intent> pickImageLauncher = registerForActivityResult(
+    // LAUNCHER CHỌN NHIỀU ẢNH
+    private final ActivityResultLauncher<Intent> pickImagesLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    selectedImageUri = result.getData().getData();
-                    imgPreview.setVisibility(View.VISIBLE);
-                    imgPreview.setImageURI(selectedImageUri);
+                    dsUriAnh.clear();
+                    if (result.getData().getClipData() != null) {
+                        int count = result.getData().getClipData().getItemCount();
+                        for (int i = 0; i < count; i++) {
+                            dsUriAnh.add(result.getData().getClipData().getItemAt(i).getUri());
+                        }
+                    } else if (result.getData().getData() != null) {
+                        dsUriAnh.add(result.getData().getData());
+                    }
+                    // HIỂN THỊ ẢNH RA MÀN HÌNH NGAY SAU KHI CHỌN
+                    displaySelectedImages();
                 }
             });
 
@@ -70,35 +86,56 @@ public class CreatePostActivity extends AppCompatActivity {
         fetchUserInfo();
 
         findViewById(R.id.imgBack).setOnClickListener(v -> finish());
+
         findViewById(R.id.btnPickImage).setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.setType("image/*");
-            pickImageLauncher.launch(intent);
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true); // Cho phép chọn nhiều
+            pickImagesLauncher.launch(Intent.createChooser(intent, "Chọn ảnh"));
         });
 
         findViewById(R.id.btnPost).setOnClickListener(v -> {
             String content = edtContent.getText().toString().trim();
-            if (content.isEmpty() && selectedImageUri == null) {
-                Toast.makeText(this, "Vui lòng nhập nội dung!", Toast.LENGTH_SHORT).show();
+            if (content.isEmpty() && dsUriAnh.isEmpty()) {
+                Toast.makeText(this, "Vui lòng nhập nội dung hoặc chọn ảnh!", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             findViewById(R.id.btnPost).setEnabled(false);
+            progressBar.setVisibility(View.VISIBLE);
 
-            if (selectedImageUri != null) {
-                uploadToCloudinary(content);
+            if (!dsUriAnh.isEmpty()) {
+                dsLinkAnhCloudinary.clear();
+                uploadImg(content, 0); // GỌI HÀM CỦA ĐẠO HỮU BẮT ĐẦU TỪ INDEX 0
             } else {
-                savePostToFirestore(content, "");
+                saveToFirestore(content, new ArrayList<>());
             }
         });
     }
 
     private void initViews() {
         edtContent = findViewById(R.id.edtContent);
-        imgPreview = findViewById(R.id.imgPreview);
         imgUserAvt = findViewById(R.id.imgUserAvt);
         tvUserName = findViewById(R.id.tvUserName);
         progressBar = findViewById(R.id.progressBar);
+        layoutSelectedImages = findViewById(R.id.layoutSelectedImages); // Ánh xạ layout chứa ảnh
+    }
+
+    // HÀM VẼ ẢNH RA MÀN HÌNH CHỜ (PREVIEW)
+    private void displaySelectedImages() {
+        layoutSelectedImages.removeAllViews();
+        for (Uri uri : dsUriAnh) {
+            ImageView imageView = new ImageView(this);
+            // Thiết lập kích thước 110dp cho mỗi ảnh vuông
+            int size = (int) (110 * getResources().getDisplayMetrics().density);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(size, size);
+            params.setMargins(0, 0, (int) (10 * getResources().getDisplayMetrics().density), 0);
+            imageView.setLayoutParams(params);
+            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+            Glide.with(this).load(uri).into(imageView);
+            layoutSelectedImages.addView(imageView);
+        }
     }
 
     private void fetchUserInfo() {
@@ -121,9 +158,14 @@ public class CreatePostActivity extends AppCompatActivity {
         });
     }
 
-    //Hàm upload ảnh lên Cloudinary
-    private void uploadToCloudinary(String content) {
+    // HÀM UPLOAD ẢNH THEO CHUẨN OKIO CỦA ĐẠO HỮU GỢI Ý
+    private void uploadImg(String content, int index) {
+        if (index >= dsUriAnh.size()) {
+            saveToFirestore(content, dsLinkAnhCloudinary);
+            return;
+        }
         try {
+            Uri imageUri = dsUriAnh.get(index);
             RequestBody requestBody = new RequestBody() {
                 @Nullable
                 @Override
@@ -133,16 +175,15 @@ public class CreatePostActivity extends AppCompatActivity {
 
                 @Override
                 public long contentLength() {
-                    try (InputStream inputStream = getContentResolver().openInputStream(selectedImageUri)) {
+                    try (InputStream inputStream = getContentResolver().openInputStream(imageUri)) {
                         return inputStream != null ? inputStream.available() : -1;
                     } catch (IOException e) {
                         return -1;
                     }
                 }
-
                 @Override
                 public void writeTo(@NonNull BufferedSink sink) throws IOException {
-                    try (InputStream inputStream = getContentResolver().openInputStream(selectedImageUri)) {
+                    try (InputStream inputStream = getContentResolver().openInputStream(imageUri)) {
                         if (inputStream != null) {
                             sink.writeAll(Okio.source(inputStream));
                         }
@@ -150,45 +191,54 @@ public class CreatePostActivity extends AppCompatActivity {
                 }
             };
 
-            String fileName = "post_" + System.currentTimeMillis() + ".jpg";
+            // 2. Tạo MultipartBody
+            String fileName = "post_" + System.currentTimeMillis() + "_" + index + ".jpg";
             MultipartBody.Part body = MultipartBody.Part.createFormData("file", fileName, requestBody);
-            RequestBody uploadPreset = RequestBody.create(MediaType.parse("text/plain"), "upload-story");
 
+            String UPLOAD_PRESET = "upload-story";
+            RequestBody uploadPreset = RequestBody.create(MediaType.parse("text/plain"), UPLOAD_PRESET);
+
+            // 3. Gọi API Upload
             cloudinaryService.uploadImage(uploadPreset, body).enqueue(new Callback<CloudinaryResponse>() {
                 @Override
                 public void onResponse(@NonNull Call<CloudinaryResponse> call, @NonNull Response<CloudinaryResponse> response) {
                     if (response.isSuccessful() && response.body() != null) {
-                        savePostToFirestore(content, response.body().getSecure_url());
+                        String url = response.body().getSecure_url();
+                        dsLinkAnhCloudinary.add(url);
+                        uploadImg(content, index + 1); // Tiếp tục đệ quy
                     } else {
-                        handleError("Lỗi Cloudinary từ chối ảnh!");
+                        handleUploadError("Lỗi Cloudinary: " + response.message());
                     }
                 }
+
                 @Override
                 public void onFailure(@NonNull Call<CloudinaryResponse> call, @NonNull Throwable t) {
-                    handleError("Lỗi kết nối mạng: " + t.getMessage());
+                    handleUploadError("Lỗi mạng: " + t.getMessage());
                 }
             });
+
         } catch (Exception e) {
-            handleError("Lỗi chuẩn bị file ảnh: " + e.getMessage());
+            handleUploadError("Lỗi xử lý file: " + e.getMessage());
         }
     }
 
-    private void handleError(String msg) {
+    private void handleUploadError(String msg) {
         progressBar.setVisibility(View.GONE);
         findViewById(R.id.btnPost).setEnabled(true);
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
-    private void savePostToFirestore(String content, String imageUrl) {
+    private void saveToFirestore(String content, List<String> imageUrls) {
         if (currentUserName == null || currentUserName.isEmpty()) {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             currentUserName = (user != null && user.getEmail() != null) ? user.getEmail().split("@")[0] : "Đạo hữu";
         }
 
         String postId = UUID.randomUUID().toString();
-        Post post = new Post(postId, currentUserId, currentUserName, currentUserAvatarUrl, content, imageUrl, Timestamp.now());
+        Post post = new Post(postId, currentUserId, currentUserName, currentUserAvatarUrl, content, imageUrls, Timestamp.now());
+
         db.collection("DienDan").document(postId).set(post).addOnSuccessListener(aVoid -> {
-            Toast.makeText(this, "Đã đăng bài!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Đã đăng bài thành công!", Toast.LENGTH_SHORT).show();
             finish();
         });
     }

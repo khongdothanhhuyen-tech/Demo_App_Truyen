@@ -6,23 +6,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Post implements Serializable {
-    private String postId, userId, userName, userAvatar, content, postImage;
+    private String postId, userId, userName, userAvatar, content;
     private Timestamp timestamp;
     private List<String> likes;
-    private int commentCount; // Thêm để thống kê số bình luận
+    private int commentCount;
+    private List<String> postImages;
 
     public Post() {
         this.likes = new ArrayList<>();
+        this.postImages = new ArrayList<>();
         this.commentCount = 0;
     }
 
-    public Post(String postId, String userId, String userName, String userAvatar, String content, String postImage, Timestamp timestamp) {
+    public Post(String postId, String userId, String userName, String userAvatar, String content, List<String> postImages, Timestamp timestamp) {
         this.postId = postId;
         this.userId = userId;
         this.userName = userName;
         this.userAvatar = userAvatar;
         this.content = content;
-        this.postImage = postImage;
+        this.postImages = postImages != null ? postImages : new ArrayList<>();
         this.timestamp = timestamp;
         this.likes = new ArrayList<>();
         this.commentCount = 0;
@@ -39,8 +41,8 @@ public class Post implements Serializable {
     public void setUserAvatar(String userAvatar) { this.userAvatar = userAvatar; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
-    public String getPostImage() { return postImage; }
-    public void setPostImage(String postImage) { this.postImage = postImage; }
+    public List<String> getPostImages() { return postImages != null ? postImages : new ArrayList<>(); }
+    public void setPostImages(List<String> postImages) { this.postImages = postImages; }
     public Timestamp getTimestamp() { return timestamp; }
     public void setTimestamp(Timestamp timestamp) { this.timestamp = timestamp; }
     public List<String> getLikes() { return likes != null ? likes : new ArrayList<>(); }
