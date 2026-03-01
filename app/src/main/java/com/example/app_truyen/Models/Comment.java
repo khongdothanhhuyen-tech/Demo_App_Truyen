@@ -5,20 +5,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Comment {
-    private String id;
-    private String uid;
-    private String tenHienThi;
-    private String avatarUrl;
-    private String noiDung;
+    private String id, uid, tenHienThi, avatarUrl, noiDung;
     private List<String> danhSachLikes;
     private Timestamp ngayDang;
-    private String storyIdDinhKem;
-    private String tenTruyenDinhKem;
-    private String anhTruyenDinhKem;
+    private String commentImage; // TRƯỜNG MỚI ĐỂ LƯU ẢNH TRONG CMT
 
-    public Comment() {
-        this.danhSachLikes = new ArrayList<>();
-    }
+    // Giữ nguyên các trường đính kèm truyện cũ của đạo hữu
+    private String storyIdDinhKem, tenTruyenDinhKem, anhTruyenDinhKem;
+
+    public Comment() { this.danhSachLikes = new ArrayList<>(); }
+
+    // Cập nhật Constructor đầy đủ
     public Comment(String id, String uid, String tenHienThi, String avatarUrl, String noiDung, List<String> danhSachLikes, Timestamp ngayDang) {
         this.id = id;
         this.uid = uid;
@@ -29,24 +26,33 @@ public class Comment {
         this.ngayDang = ngayDang;
     }
 
+    // Thêm Getter/Setter cho commentImage
+    public String getCommentImage() { return commentImage; }
+    public void setCommentImage(String commentImage) { this.commentImage = commentImage; }
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public void setTenHienThi(String tenHienThi) {
+        this.tenHienThi = tenHienThi;
+    }
 
-    public String getUid() { return uid; }
-    public void setUid(String uid) { this.uid = uid; }
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
 
-    public String getTenHienThi() { return tenHienThi; }
-    public void setTenHienThi(String tenHienThi) { this.tenHienThi = tenHienThi; }
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
 
-    public String getAvatarUrl() { return avatarUrl; }
-    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+    public void setNoiDung(String noiDung) {
+        this.noiDung = noiDung;
+    }
 
-    public String getNoiDung() { return noiDung; }
-    public void setNoiDung(String noiDung) { this.noiDung = noiDung; }
+    public void setDanhSachLikes(List<String> danhSachLikes) {
+        this.danhSachLikes = danhSachLikes;
+    }
 
-    public Timestamp getNgayDang() { return ngayDang; }
-    public void setNgayDang(Timestamp ngayDang) { this.ngayDang = ngayDang; }
+    public void setNgayDang(Timestamp ngayDang) {
+        this.ngayDang = ngayDang;
+    }
 
     public String getStoryIdDinhKem() {
         return storyIdDinhKem;
@@ -71,17 +77,13 @@ public class Comment {
     public void setAnhTruyenDinhKem(String anhTruyenDinhKem) {
         this.anhTruyenDinhKem = anhTruyenDinhKem;
     }
-    public List<String> getDanhSachLikes() {
-        if (danhSachLikes == null) {
-            return new ArrayList<>();
-        }
-        return danhSachLikes;
-    }
-    public void setDanhSachLikes(List<String> danhSachLikes) {
-        this.danhSachLikes = danhSachLikes;
-    }
-    public int getSoLuotThich() {
-        if (danhSachLikes == null) return 0;
-        return danhSachLikes.size();
-    }
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getUid() { return uid; }
+    public void setUid(String uid) { this.uid = uid; }
+    public String getTenHienThi() { return tenHienThi; }
+    public String getNoiDung() { return noiDung; }
+    public Timestamp getNgayDang() { return ngayDang; }
+    public List<String> getDanhSachLikes() { return danhSachLikes != null ? danhSachLikes : new ArrayList<>(); }
 }
