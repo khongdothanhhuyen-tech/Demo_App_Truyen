@@ -51,7 +51,14 @@ public class ProfileActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private CloudinaryService cloudinaryService;
     private ProgressBar progressBar;
-
+    private ImageView imgPet;
+    private TextView tvStreak, tvExp;
+    private ProgressBar pbExp;
+    private Button btnFeedPet;
+    private int currentExp = 0;
+    private int currentStreak = 0;
+    private int petLevel = 1;
+    private String lastCheckIn = "";
     private final ActivityResultLauncher<Intent> pickImageLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -89,7 +96,9 @@ public class ProfileActivity extends AppCompatActivity {
             pickImageLauncher.launch(intent);
         });
         loadUserProfile();
+        initPetUI();
         setupNavigation();
+
     }
 
     // Hàm quản lý trạng thái tải
@@ -234,5 +243,128 @@ public class ProfileActivity extends AppCompatActivity {
             }
             return false;
         });
+    }
+    private void initPetUI() {
+        imgPet = findViewById(R.id.imgPet);
+        tvStreak = findViewById(R.id.tvStreak);
+        tvExp = findViewById(R.id.tvExp);
+        pbExp = findViewById(R.id.pbExp);
+        btnFeedPet = findViewById(R.id.btnFeedPet);
+
+        btnFeedPet.setOnClickListener(v -> feedPet());
+        loadPetData();
+    }
+
+
+    private void updatePetUI() {
+        // Tính toán cấp độ linh thú
+        if (currentExp >= 1000) {
+            petLevel = 3;
+            pbExp.setMax(5000);
+            imgPet.setImageResource(R.drawable.dragon); // Rồng lớn
+            tvExp.setText("Cấp 3: Thần Thú (" + currentExp + "/5000 EXP)");
+        } else if (currentExp >= 300) {
+            petLevel = 2;
+            pbExp.setMax(1000);
+            imgPet.setImageResource(R.drawable.baby_dragon); // Rồng con
+            tvExp.setText("Cấp 2: Linh Thú Nhỏ (" + currentExp + "/1000 EXP)");
+        } else {
+            petLevel = 1;
+            pbExp.setMax(300);
+            imgPet.setImageResource(R.drawable.egg); // Quả trứng
+            tvExp.setText("Cấp 1: Đang ấp trứng (" + currentExp + "/300 EXP)");
+        }
+
+        pbExp.setProgress(currentExp);
+        tvStreak.setText("🔥 Đang có chuỗi " + currentStreak + " ngày!");
+
+        // Kiểm tra xem hôm nay đã điểm danh (cho ăn) chưa
+        String today = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
+        if (today.equals(lastCheckIn)) {
+            btnFeedPet.setEnabled(false);
+            btnFeedPet.setText("Đã cho ăn hôm nay");
+            btnFeedPet.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.gray_text)));
+        } else {
+            btnFeedPet.setEnabled(true);
+            btnFeedPet.setText("Cho ăn (+10 EXP)");
+            btnFeedPet.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.orange)));
+        }
+    }
+
+
+    // 1. Hàm tính khoảng cách ngày
+    private long getDaysDifference(String lastDateStr, String todayStr) {
+        if (lastDateStr == null || lastDateStr.isEmpty()) return -1;
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+        try {
+            java.util.Date lastDate = sdf.parse(lastDateStr);
+            java.util.Date todayDate = sdf.parse(todayStr);
+            long diffInMillis = todayDate.getTime() - lastDate.getTime();
+            return diffInMillis / (1000 * 60 * 60 * 24);
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    // 2. Hàm tải dữ liệu (Cập nhật logic reset điểm tại đây)
+    private void loadPetData() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) return;
+
+        db.collection("TaiKhoan").document(user.getUid()).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        currentExp = doc.getLong("exp") != null ? doc.getLong("exp").intValue() : 0;
+                        currentStreak = doc.getLong("streak") != null ? doc.getLong("streak").intValue() : 0;
+                        lastCheckIn = doc.getString("lastCheckIn") != null ? doc.getString("lastCheckIn") : "";
+
+                        // KIỂM TRA MẤT CHUỖI NGAY KHI VỪA MỞ PROFILE
+                        String today = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
+                        long daysDiff = getDaysDifference(lastCheckIn, today);
+
+                        // Nếu khoảng cách lớn hơn 1 ngày (bỏ lỡ điểm danh) -> Reset tất cả về 0
+                        if (daysDiff > 1) {
+                            currentStreak = 0;
+                            currentExp = 0;
+
+                            // Cập nhật lại Firebase lập tức để đồng bộ
+                            db.collection("TaiKhoan").document(user.getUid())
+                                    .update("exp", 0, "streak", 0);
+                        }
+
+                        // Gọi updatePetUI() sẽ tự động đổi linh thú về dạng Trứng vì EXP = 0
+                        updatePetUI();
+                    }
+                });
+    }
+
+    // 3. Hàm Cho ăn (Điểm danh)
+    private void feedPet() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) return;
+
+        String today = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
+
+        if (!today.equals(lastCheckIn)) {
+            long daysDiff = getDaysDifference(lastCheckIn, today);
+
+            if (daysDiff == 1) {
+                currentStreak++; // Đăng nhập liền mạch ngày hôm sau -> Cộng chuỗi
+            } else {
+                // Nếu lần đầu chơi hoặc vừa bị reset ở trên -> Bấm cho ăn sẽ thành chuỗi 1 ngày
+                currentStreak = 1;
+                currentExp = 0; // Đảm bảo điểm cày lại từ đầu
+            }
+
+            currentExp += 10; // Nhận 10đ cho lần điểm danh này
+            lastCheckIn = today;
+
+            db.collection("TaiKhoan").document(user.getUid())
+                    .update("exp", currentExp, "streak", currentStreak, "lastCheckIn", today)
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "Đã cho ăn! +10 EXP", Toast.LENGTH_SHORT).show();
+                        updatePetUI();
+                    });
+        }
     }
 }

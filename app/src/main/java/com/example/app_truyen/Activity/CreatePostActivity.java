@@ -238,8 +238,25 @@ public class CreatePostActivity extends AppCompatActivity {
         Post post = new Post(postId, currentUserId, currentUserName, currentUserAvatarUrl, content, imageUrls, Timestamp.now());
 
         db.collection("DienDan").document(postId).set(post).addOnSuccessListener(aVoid -> {
+            addExpForAction("lastPosted");
             Toast.makeText(this, "Đã đăng bài thành công!", Toast.LENGTH_SHORT).show();
             finish();
+        });
+    }
+    private void addExpForAction(String actionField) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+        String today = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
+        FirebaseFirestore.getInstance().collection("TaiKhoan").document(uid).get().addOnSuccessListener(doc -> {
+            if (doc.exists()) {
+                String lastAction = doc.getString(actionField);
+                // Nếu hôm nay chưa làm hành động này thì cộng điểm
+                if (lastAction == null || !lastAction.equals(today)) {
+                    int exp = doc.getLong("exp") != null ? doc.getLong("exp").intValue() : 0;
+                    FirebaseFirestore.getInstance().collection("TaiKhoan").document(uid)
+                            .update("exp", exp + 10, actionField, today);
+                }
+            }
         });
     }
 }

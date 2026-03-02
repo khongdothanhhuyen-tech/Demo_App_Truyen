@@ -160,9 +160,27 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
         }
 
         holder.btnLikePost.setOnClickListener(v -> {
+            boolean isLiking = (likes == null || !likes.contains(currentUserId));
+
             FirebaseFirestore.getInstance().collection("DienDan").document(post.getPostId())
-                    .update("likes", likes != null && likes.contains(currentUserId) ?
-                            FieldValue.arrayRemove(currentUserId) : FieldValue.arrayUnion(currentUserId));
+                    .update("likes", isLiking ? FieldValue.arrayUnion(currentUserId) : FieldValue.arrayRemove(currentUserId))
+                    .addOnSuccessListener(aVoid -> {
+                        // CHỈ CỘNG ĐIỂM KHI NGƯỜI DÙNG BẤM "THÍCH" (Lưu 1 lần/ngày)
+                        if (isLiking) {
+                            String today = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
+                            FirebaseFirestore.getInstance().collection("TaiKhoan").document(currentUserId).get()
+                                    .addOnSuccessListener(doc -> {
+                                        if (doc.exists()) {
+                                            String lastLiked = doc.getString("lastLiked");
+                                            if (lastLiked == null || !lastLiked.equals(today)) {
+                                                int exp = doc.getLong("exp") != null ? doc.getLong("exp").intValue() : 0;
+                                                FirebaseFirestore.getInstance().collection("TaiKhoan").document(currentUserId)
+                                                        .update("exp", exp + 10, "lastLiked", today);
+                                            }
+                                        }
+                                    });
+                        }
+                    });
         });
 
         holder.tvLikeStats.setOnClickListener(v -> {

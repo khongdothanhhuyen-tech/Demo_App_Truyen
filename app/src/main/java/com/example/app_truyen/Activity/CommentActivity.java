@@ -192,6 +192,7 @@ public class CommentActivity extends AppCompatActivity {
                 .collection("BinhLuan").document(commentId)
                 .set(newCmt)
                 .addOnSuccessListener(aVoid -> {
+                    addExpForAction("lastCommented");
                     edtComment.setText("");
                     loadComments();
                 });
@@ -210,5 +211,19 @@ public class CommentActivity extends AppCompatActivity {
                     }
                     adapter.notifyDataSetChanged();
                 });
+    }
+    private void addExpForAction(String actionField) {
+        if (currentUserId == null) return;
+        String today = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
+        FirebaseFirestore.getInstance().collection("TaiKhoan").document(currentUserId).get().addOnSuccessListener(doc -> {
+            if (doc.exists()) {
+                String lastAction = doc.getString(actionField);
+                if (lastAction == null || !lastAction.equals(today)) {
+                    int exp = doc.getLong("exp") != null ? doc.getLong("exp").intValue() : 0;
+                    FirebaseFirestore.getInstance().collection("TaiKhoan").document(currentUserId)
+                            .update("exp", exp + 10, actionField, today);
+                }
+            }
+        });
     }
 }
