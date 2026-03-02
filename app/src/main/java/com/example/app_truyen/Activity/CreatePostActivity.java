@@ -69,7 +69,6 @@ public class CreatePostActivity extends AppCompatActivity {
                     } else if (result.getData().getData() != null) {
                         dsUriAnh.add(result.getData().getData());
                     }
-                    // HIỂN THỊ ẢNH RA MÀN HÌNH NGAY SAU KHI CHỌN
                     displaySelectedImages();
                 }
             });
@@ -90,7 +89,7 @@ public class CreatePostActivity extends AppCompatActivity {
         findViewById(R.id.btnPickImage).setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.setType("image/*");
-            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true); // Cho phép chọn nhiều
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
             pickImagesLauncher.launch(Intent.createChooser(intent, "Chọn ảnh"));
         });
 
@@ -106,7 +105,7 @@ public class CreatePostActivity extends AppCompatActivity {
 
             if (!dsUriAnh.isEmpty()) {
                 dsLinkAnhCloudinary.clear();
-                uploadImg(content, 0); // GỌI HÀM CỦA ĐẠO HỮU BẮT ĐẦU TỪ INDEX 0
+                uploadImg(content, 0);
             } else {
                 saveToFirestore(content, new ArrayList<>());
             }
@@ -118,10 +117,10 @@ public class CreatePostActivity extends AppCompatActivity {
         imgUserAvt = findViewById(R.id.imgUserAvt);
         tvUserName = findViewById(R.id.tvUserName);
         progressBar = findViewById(R.id.progressBar);
-        layoutSelectedImages = findViewById(R.id.layoutSelectedImages); // Ánh xạ layout chứa ảnh
+        layoutSelectedImages = findViewById(R.id.layoutSelectedImages);
     }
 
-    // HÀM VẼ ẢNH RA MÀN HÌNH CHỜ (PREVIEW)
+    // HÀM VẼ ẢNH RA MÀN HÌNH CHỜ
     private void displaySelectedImages() {
         layoutSelectedImages.removeAllViews();
         for (Uri uri : dsUriAnh) {
@@ -205,7 +204,7 @@ public class CreatePostActivity extends AppCompatActivity {
                     if (response.isSuccessful() && response.body() != null) {
                         String url = response.body().getSecure_url();
                         dsLinkAnhCloudinary.add(url);
-                        uploadImg(content, index + 1); // Tiếp tục đệ quy
+                        uploadImg(content, index + 1);
                     } else {
                         handleUploadError("Lỗi Cloudinary: " + response.message());
                     }
@@ -238,8 +237,25 @@ public class CreatePostActivity extends AppCompatActivity {
         Post post = new Post(postId, currentUserId, currentUserName, currentUserAvatarUrl, content, imageUrls, Timestamp.now());
 
         db.collection("DienDan").document(postId).set(post).addOnSuccessListener(aVoid -> {
+            addExpForAction("lastPosted");
             Toast.makeText(this, "Đã đăng bài thành công!", Toast.LENGTH_SHORT).show();
             finish();
+        });
+    }
+    private void addExpForAction(String actionField) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+        String today = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
+        FirebaseFirestore.getInstance().collection("TaiKhoan").document(uid).get().addOnSuccessListener(doc -> {
+            if (doc.exists()) {
+                String lastAction = doc.getString(actionField);
+                // Nếu hôm nay chưa làm hành động này thì cộng điểm
+                if (lastAction == null || !lastAction.equals(today)) {
+                    int exp = doc.getLong("exp") != null ? doc.getLong("exp").intValue() : 0;
+                    FirebaseFirestore.getInstance().collection("TaiKhoan").document(uid)
+                            .update("exp", exp + 10, actionField, today);
+                }
+            }
         });
     }
 }

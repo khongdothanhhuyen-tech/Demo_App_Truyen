@@ -21,27 +21,32 @@ import com.example.app_truyen.API.CloudinaryService;
 import com.example.app_truyen.API.RetrofitClient;
 import com.example.app_truyen.Models.Story;
 import com.example.app_truyen.R;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-/// /
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.Timestamp;
-import java.util.HashMap;
-import java.util.Map;
 
 public class AddEditStoryActivity extends AppCompatActivity {
 
-    private final String[] listTheLoai = {"Hành động", "Tình cảm", "Học đường", "Phiêu lưu", "Sát thủ", "Kinh dị", "Hài hước", "Viễn tưởng", "Khoa học viễn tưởng", "Siêu anh hùng"};
+    private String[] listTheLoai = new String[0];
     private boolean[] checkedTheLoai;
     private final ArrayList<String> userSelectedTheLoai = new ArrayList<>();
+
     TextView tvBack, tvHistory;
     EditText edtMaTruyen, edtTenTruyen, edtTheLoai, edtMoTa, edtTacGia;
     Button btnChonAnh, btnSave, btnCancel;
@@ -55,8 +60,6 @@ public class AddEditStoryActivity extends AppCompatActivity {
 
     private boolean oldAllowComment = true;
 
-
-    // Launcher chọn ảnh
     private final ActivityResultLauncher<Intent> pickImageLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -84,31 +87,22 @@ public class AddEditStoryActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         db = FirebaseFirestore.getInstance();
         cloudinaryService = RetrofitClient.getClient().create(CloudinaryService.class);
-        checkedTheLoai = new boolean[listTheLoai.length];
 
-        ///
         cbAllowComment = findViewById(R.id.cbAllowComment);
-        ///
+
         tvHistory = findViewById(R.id.tvHistory);
         tvHistory.setOnClickListener(v -> {
-
             if (isEditMode && truyenCu != null) {
-
                 Intent intent = new Intent(this, StoryHistoryActivity.class);
                 intent.putExtra("MA_TRUYEN", truyenCu.getMaTruyen());
                 startActivity(intent);
-
             } else {
-                Toast.makeText(this,
-                        "Phải lưu truyện trước khi xem lịch sử",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Phải lưu truyện trước khi xem lịch sử", Toast.LENGTH_SHORT).show();
             }
-
         });
 
         edtTheLoai.setFocusable(false);
         edtTheLoai.setClickable(true);
-
         edtTheLoai.setOnClickListener(v -> showGenreDialog());
 
         tvBack.setOnClickListener(v -> finish());
@@ -124,11 +118,47 @@ public class AddEditStoryActivity extends AppCompatActivity {
             setLoadingState(true);
             save();
         });
+
         checkMode();
         setupUI();
+
+        fetchGenresFromFirestore();
     }
 
-    // Hàm bật/tắt trạng thái tải
+    private void fetchGenresFromFirestore() {
+        db.collection("TheLoai").get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<String> tempGenres = new ArrayList<>();
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        String genre = doc.getString("tenTheLoai");
+                        if (genre == null || genre.isEmpty()) genre = doc.getString("ten");
+                        if (genre == null || genre.isEmpty()) genre = doc.getString("theLoai");
+
+                        if (genre == null || genre.isEmpty()) genre = doc.getId();
+
+                        tempGenres.add(genre);
+                    }
+
+                    listTheLoai = tempGenres.toArray(new String[0]);
+                    checkedTheLoai = new boolean[listTheLoai.length];
+                    mapSelectedGenres();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Lỗi tải danh sách thể loại!", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void mapSelectedGenres() {
+        if (isEditMode && truyenCu != null && truyenCu.getTheLoai() != null) {
+            userSelectedTheLoai.clear();
+            userSelectedTheLoai.addAll(truyenCu.getTheLoai());
+
+            for (int i = 0; i < listTheLoai.length; i++) {
+                checkedTheLoai[i] = userSelectedTheLoai.contains(listTheLoai[i]);
+            }
+        }
+    }
+
     private void setLoadingState(boolean isLoading) {
         if (isLoading) {
             progressBar.setVisibility(View.VISIBLE);
@@ -143,7 +173,6 @@ public class AddEditStoryActivity extends AppCompatActivity {
         }
     }
 
-    // Hàm kiểm tra trạng thái Sửa hay Thêm
     private void checkMode() {
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("TRUYEN_DATA")) {
@@ -154,14 +183,13 @@ public class AddEditStoryActivity extends AppCompatActivity {
             truyenCu = null;
         }
     }
-    // Hàm hiển thị Sửa hay Thêm
+
     private void setupUI() {
         if (isEditMode) {
             btnSave.setText("Cập Nhật Truyện");
             edtMaTruyen.setText(truyenCu.getMaTruyen());
-            edtMaTruyen.setEnabled(false);
+            edtMaTruyen.setEnabled(false); // Khoá ID truyện
 
-            /// /
             FirebaseFirestore.getInstance()
                     .collection("StorySettings")
                     .document(truyenCu.getMaTruyen())
@@ -174,33 +202,32 @@ public class AddEditStoryActivity extends AppCompatActivity {
                                 cbAllowComment.setChecked(allow);
                             }
                         } else {
-                            cbAllowComment.setChecked(true); // mặc định bật comment
+                            cbAllowComment.setChecked(true);
                         }
                     });
 
             edtTenTruyen.setText(truyenCu.getTenTruyen());
 
             if (truyenCu.getTheLoai() != null) {
-                userSelectedTheLoai.clear();
-                userSelectedTheLoai.addAll(truyenCu.getTheLoai());
-
-                for (int i = 0; i < listTheLoai.length; i++) {
-                    checkedTheLoai[i] = userSelectedTheLoai.contains(listTheLoai[i]);
-                }
-                edtTheLoai.setText(String.join(", ", userSelectedTheLoai));
+                edtTheLoai.setText(String.join(", ", truyenCu.getTheLoai()));
             }
 
             edtMoTa.setText(truyenCu.getMoTa());
             edtTacGia.setText(truyenCu.getTacGia());
-            btnChonAnh.setText("Chọn Ảnh Mới ");
+            btnChonAnh.setText("Chọn Ảnh Mới");
         } else {
             tvHistory.setVisibility(View.GONE);
             btnSave.setText("Lưu Truyện Mới");
             edtMaTruyen.setEnabled(true);
         }
     }
-    // Hàm hiển thị dialog chọn thể loại
+
     private void showGenreDialog() {
+        if (listTheLoai == null || listTheLoai.length == 0) {
+            Toast.makeText(this, "Đang tải dữ liệu thể loại, vui lòng đợi...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Chọn thể loại");
 
@@ -218,7 +245,7 @@ public class AddEditStoryActivity extends AppCompatActivity {
         builder.setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss());
         builder.show();
     }
-    // Hàm lưu
+
     private void save() {
         if (selectedImageUri != null) {
             uploadImageToCloudinary(selectedImageUri);
@@ -227,168 +254,161 @@ public class AddEditStoryActivity extends AppCompatActivity {
             saveDataToFirestore(imageUrl);
         }
     }
-    // Hàm upload ảnh lên Cloudinary
+
     private void uploadImageToCloudinary(Uri imageUri) {
         setLoadingState(true);
         try {
             RequestBody requestBody = new RequestBody() {
                 @Override
-                public MediaType contentType() {
-                    return MediaType.parse("image/*");
-                }
+                public MediaType contentType() { return MediaType.parse("image/*"); }
                 @Override
                 public long contentLength() {
-                    try (InputStream inputStream = getContentResolver().openInputStream(imageUri)) {
-                        return inputStream != null ? inputStream.available() : -1;
-                    } catch (IOException e) {
-                        return -1;
-                    }
+                    try (InputStream is = getContentResolver().openInputStream(imageUri)) {
+                        return is != null ? is.available() : -1;
+                    } catch (IOException e) { return -1; }
                 }
                 @Override
                 public void writeTo(@NonNull okio.BufferedSink sink) throws IOException {
-                    try (InputStream inputStream = getContentResolver().openInputStream(imageUri)) {
-                        if (inputStream != null) {
-                            sink.writeAll(okio.Okio.source(inputStream));
-                        }
+                    try (InputStream is = getContentResolver().openInputStream(imageUri)) {
+                        if (is != null) sink.writeAll(okio.Okio.source(is));
                     }
                 }
             };
 
-            // 2. Tạo MultipartBody
             MultipartBody.Part body = MultipartBody.Part.createFormData("file", "upload_" + System.currentTimeMillis() + ".jpg", requestBody);
+            RequestBody uploadPreset = RequestBody.create(MediaType.parse("text/plain"), "upload-story");
 
-            String UPLOAD_PRESET = "upload-story";
-            RequestBody uploadPreset = RequestBody.create(MediaType.parse("text/plain"), UPLOAD_PRESET);
-
-            cloudinaryService.uploadImage(uploadPreset, body).enqueue(new Callback<>() {
+            cloudinaryService.uploadImage(uploadPreset, body).enqueue(new Callback<CloudinaryResponse>() {
                 @Override
                 public void onResponse(@NonNull Call<CloudinaryResponse> call, @NonNull Response<CloudinaryResponse> response) {
                     if (response.isSuccessful() && response.body() != null) {
-                        String imageUrl = response.body().getSecure_url();
-                        saveDataToFirestore(imageUrl);
+                        saveDataToFirestore(response.body().getSecure_url());
                     } else {
                         setLoadingState(false);
-                        Toast.makeText(AddEditStoryActivity.this, "Lỗi Cloudinary: " + response.message(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(AddEditStoryActivity.this, "Lỗi Cloudinary!", Toast.LENGTH_SHORT).show();
                     }
                 }
-
                 @Override
                 public void onFailure(@NonNull Call<CloudinaryResponse> call, @NonNull Throwable t) {
                     setLoadingState(false);
-                    Toast.makeText(AddEditStoryActivity.this, "Lỗi mạng: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AddEditStoryActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
                 }
             });
-
         } catch (Exception e) {
             setLoadingState(false);
-            e.printStackTrace();
             Toast.makeText(this, "Lỗi tạo file upload!", Toast.LENGTH_SHORT).show();
         }
     }
-    // Hàm lưu dữ liệu vào Firestore
+
+    // HÀM LƯU DỮ LIỆU
     private void saveDataToFirestore(String imgUrl) {
         String maTruyen = edtMaTruyen.getText().toString().trim();
         String tenTruyen = edtTenTruyen.getText().toString().trim();
         String moTa = edtMoTa.getText().toString().trim();
         String tacGia = edtTacGia.getText().toString().trim();
 
-        if (maTruyen.isEmpty()) {
+        if (maTruyen.isEmpty() || userSelectedTheLoai.isEmpty()) {
             setLoadingState(false);
-            Toast.makeText(this, "Mã truyện không được để trống!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (userSelectedTheLoai.isEmpty()) {
-            setLoadingState(false);
-            Toast.makeText(this, "Bạn phải chọn ít nhất 1 thể loại!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Mã truyện và Thể loại không được để trống!", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        Story truyenMoi = new Story(maTruyen, tenTruyen, userSelectedTheLoai, tacGia, moTa, imgUrl);
-        ///
-        saveEditHistory(maTruyen, truyenMoi);
-        db.collection("Truyen").document(maTruyen)
-                .set(truyenMoi).addOnSuccessListener(aVoid -> {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("tenTruyen", tenTruyen);
+        updates.put("tacGia", tacGia);
+        updates.put("moTa", moTa);
+        updates.put("theLoai", userSelectedTheLoai);
 
-                    // TẠI ĐÂY
-                    FirebaseFirestore.getInstance()
-                            .collection("StorySettings")
-                            .document(maTruyen)
-                            .set(java.util.Collections.singletonMap(
-                                    "allowComment",
-                                    cbAllowComment.isChecked()
-                            ));
+        if (imgUrl != null && !imgUrl.isEmpty()) {
+            updates.put("anhBiaUrl", imgUrl);
+        }
 
-                    setLoadingState(false);
-                    Toast.makeText(AddEditStoryActivity.this, "Lưu thành công!", Toast.LENGTH_SHORT).show();
-                    setResult(RESULT_OK);
-                    finish();
-                })
-                .addOnFailureListener(e -> {
-                    setLoadingState(false); // Tắt trạng thái tải
-                    Toast.makeText(AddEditStoryActivity.this, "Lỗi khi lưu dữ liệu: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+        // Lưu lịch sử chỉnh sửa
+        saveEditHistory(maTruyen, tenTruyen, tacGia, moTa, imgUrl, userSelectedTheLoai);
+
+        if (isEditMode) {
+            db.collection("Truyen").document(maTruyen).update(updates)
+                    .addOnSuccessListener(aVoid -> finishSaveSettings(maTruyen))
+                    .addOnFailureListener(e -> handleError(e));
+        } else {
+
+            updates.put("maTruyen", maTruyen);
+            updates.put("viewCountAll", 0);
+            updates.put("viewCountMonth", 0);
+            updates.put("viewCountWeek", 0);
+
+            Calendar cal = Calendar.getInstance();
+            updates.put("monthKey", cal.get(Calendar.YEAR) + "_" + (cal.get(Calendar.MONTH) + 1));
+            updates.put("weekKey", cal.get(Calendar.YEAR) + "_" + cal.get(Calendar.WEEK_OF_YEAR));
+
+            db.collection("Truyen").document(maTruyen).set(updates)
+                    .addOnSuccessListener(aVoid -> finishSaveSettings(maTruyen))
+                    .addOnFailureListener(e -> handleError(e));
+        }
     }
 
-    private void saveEditHistory(String maTruyen, Story newStory) {
+    private void finishSaveSettings(String maTruyen) {
+        Map<String, Object> settings = new HashMap<>();
+        settings.put("allowComment", cbAllowComment.isChecked());
 
+        FirebaseFirestore.getInstance().collection("StorySettings").document(maTruyen)
+                .set(settings, SetOptions.merge());
+
+        setLoadingState(false);
+        Toast.makeText(AddEditStoryActivity.this, "Lưu thành công!", Toast.LENGTH_SHORT).show();
+        setResult(RESULT_OK);
+        finish();
+    }
+
+    private void handleError(Exception e) {
+        setLoadingState(false);
+        Toast.makeText(AddEditStoryActivity.this, "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+    }
+
+    // Cập nhật hàm lưu lịch sử
+    private void saveEditHistory(String maTruyen, String newTen, String newTacGia, String newMoTa, String newImgUrl, List<String> newTheLoai) {
         if (!isEditMode || truyenCu == null) return;
-
         Map<String, Object> changes = new HashMap<>();
 
-        // So sánh ảnh bìa
-        if (!truyenCu.getAnhBiaUrl().equals(newStory.getAnhBiaUrl())) {
-
+        if (newImgUrl != null && !newImgUrl.isEmpty() && !truyenCu.getAnhBiaUrl().equals(newImgUrl)) {
             Map<String, String> change = new HashMap<>();
             change.put("old", truyenCu.getAnhBiaUrl());
-            change.put("new", newStory.getAnhBiaUrl());
-
+            change.put("new", newImgUrl);
             changes.put("anhBiaUrl", change);
         }
-
-        // So sánh tên truyện
-        if (!truyenCu.getTenTruyen().equals(newStory.getTenTruyen())) {
+        if (!truyenCu.getTenTruyen().equals(newTen)) {
             Map<String, String> change = new HashMap<>();
             change.put("old", truyenCu.getTenTruyen());
-            change.put("new", newStory.getTenTruyen());
+            change.put("new", newTen);
             changes.put("tenTruyen", change);
         }
-
-        // So sánh tác giả
-        if (!truyenCu.getTacGia().equals(newStory.getTacGia())) {
+        if (!truyenCu.getTacGia().equals(newTacGia)) {
             Map<String, String> change = new HashMap<>();
             change.put("old", truyenCu.getTacGia());
-            change.put("new", newStory.getTacGia());
+            change.put("new", newTacGia);
             changes.put("tacGia", change);
         }
-
-        // So sánh mô tả
-        if (!truyenCu.getMoTa().equals(newStory.getMoTa())) {
+        if (!truyenCu.getMoTa().equals(newMoTa)) {
             Map<String, String> change = new HashMap<>();
             change.put("old", truyenCu.getMoTa());
-            change.put("new", newStory.getMoTa());
+            change.put("new", newMoTa);
             changes.put("moTa", change);
         }
-
-        // So sánh thể loại
-        if (!truyenCu.getTheLoai().equals(newStory.getTheLoai())) {
+        if (!truyenCu.getTheLoai().equals(newTheLoai)) {
             Map<String, Object> change = new HashMap<>();
             change.put("old", truyenCu.getTheLoai());
-            change.put("new", newStory.getTheLoai());
+            change.put("new", newTheLoai);
             changes.put("theLoai", change);
         }
 
-        // So sánh allowComment
         boolean newAllowComment = cbAllowComment.isChecked();
         if (oldAllowComment != newAllowComment) {
-
             Map<String, String> change = new HashMap<>();
             change.put("old", oldAllowComment ? "Bật" : "Tắt");
             change.put("new", newAllowComment ? "Bật" : "Tắt");
-
             changes.put("allowComment", change);
         }
 
-        // Nếu không có thay đổi thì không lưu
         if (changes.isEmpty()) return;
 
         Map<String, Object> historyData = new HashMap<>();
@@ -396,12 +416,6 @@ public class AddEditStoryActivity extends AppCompatActivity {
         historyData.put("editedBy", FirebaseAuth.getInstance().getCurrentUser().getUid());
         historyData.put("changes", changes);
 
-        FirebaseFirestore.getInstance()
-                .collection("StoryEditHistory")
-                .document(maTruyen)
-                .collection("logs")
-                .add(historyData);
+        FirebaseFirestore.getInstance().collection("StoryEditHistory").document(maTruyen).collection("logs").add(historyData);
     }
-
-
 }

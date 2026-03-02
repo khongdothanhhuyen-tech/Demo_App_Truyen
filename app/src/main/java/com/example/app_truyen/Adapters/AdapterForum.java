@@ -160,9 +160,27 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
         }
 
         holder.btnLikePost.setOnClickListener(v -> {
+            boolean isLiking = (likes == null || !likes.contains(currentUserId));
+
             FirebaseFirestore.getInstance().collection("DienDan").document(post.getPostId())
-                    .update("likes", likes != null && likes.contains(currentUserId) ?
-                            FieldValue.arrayRemove(currentUserId) : FieldValue.arrayUnion(currentUserId));
+                    .update("likes", isLiking ? FieldValue.arrayUnion(currentUserId) : FieldValue.arrayRemove(currentUserId))
+                    .addOnSuccessListener(aVoid -> {
+                        // CHỈ CỘNG ĐIỂM KHI NGƯỜI DÙNG BẤM "THÍCH" (Lưu 1 lần/ngày)
+                        if (isLiking) {
+                            String today = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
+                            FirebaseFirestore.getInstance().collection("TaiKhoan").document(currentUserId).get()
+                                    .addOnSuccessListener(doc -> {
+                                        if (doc.exists()) {
+                                            String lastLiked = doc.getString("lastLiked");
+                                            if (lastLiked == null || !lastLiked.equals(today)) {
+                                                int exp = doc.getLong("exp") != null ? doc.getLong("exp").intValue() : 0;
+                                                FirebaseFirestore.getInstance().collection("TaiKhoan").document(currentUserId)
+                                                        .update("exp", exp + 10, "lastLiked", today);
+                                            }
+                                        }
+                                    });
+                        }
+                    });
         });
 
         holder.tvLikeStats.setOnClickListener(v -> {
@@ -196,7 +214,7 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
         });
     }
 
-    // ===== HÀM TẠO TRÌNH XEM ẢNH TOÀN MÀN HÌNH (GALLERY) =====
+    // HÀM TẠO TRÌNH XEM ẢNH TOÀN MÀN HÌNH
     private void showImageGalleryDialog(List<String> images, int startIndex) {
         Dialog dialog = new Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
 
@@ -204,17 +222,15 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
         rootLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         rootLayout.setBackgroundColor(Color.BLACK);
 
-        // RecyclerView cấu hình lướt ngang như ViewPager
         RecyclerView rv = new RecyclerView(context);
         rv.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         LinearLayoutManager layoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
         rv.setLayoutManager(layoutManager);
 
-        // PagerSnapHelper giúp vuốt ảnh dính từng khung hình một (như Facebook)
         PagerSnapHelper snapHelper = new PagerSnapHelper();
         snapHelper.attachToRecyclerView(rv);
 
-        // Số thứ tự ảnh (Ví dụ: 1 / 5)
+        // Số thứ tự ảnh
         TextView tvIndicator = new TextView(context);
         RelativeLayout.LayoutParams tvParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tvParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
@@ -263,7 +279,7 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
         // Cuộn đến ảnh người dùng vừa click
         rv.scrollToPosition(startIndex);
 
-        // Nút X (Đóng)
+        // Nút X
         ImageView btnClose = new ImageView(context);
         RelativeLayout.LayoutParams closeParams = new RelativeLayout.LayoutParams(120, 120);
         closeParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
