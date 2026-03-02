@@ -214,7 +214,7 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
         });
     }
 
-    // ===== HÀM TẠO TRÌNH XEM ẢNH TOÀN MÀN HÌNH (GALLERY) =====
+    // HÀM TẠO TRÌNH XEM ẢNH TOÀN MÀN HÌNH
     private void showImageGalleryDialog(List<String> images, int startIndex) {
         Dialog dialog = new Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
 
@@ -222,17 +222,15 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
         rootLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         rootLayout.setBackgroundColor(Color.BLACK);
 
-        // RecyclerView cấu hình lướt ngang như ViewPager
         RecyclerView rv = new RecyclerView(context);
         rv.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         LinearLayoutManager layoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
         rv.setLayoutManager(layoutManager);
 
-        // PagerSnapHelper giúp vuốt ảnh dính từng khung hình một (như Facebook)
         PagerSnapHelper snapHelper = new PagerSnapHelper();
         snapHelper.attachToRecyclerView(rv);
 
-        // Số thứ tự ảnh (Ví dụ: 1 / 5)
+        // Số thứ tự ảnh
         TextView tvIndicator = new TextView(context);
         RelativeLayout.LayoutParams tvParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tvParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
@@ -281,7 +279,7 @@ public class AdapterForum extends RecyclerView.Adapter<AdapterForum.PostViewHold
         // Cuộn đến ảnh người dùng vừa click
         rv.scrollToPosition(startIndex);
 
-        // Nút X (Đóng)
+        // Nút X
         ImageView btnClose = new ImageView(context);
         RelativeLayout.LayoutParams closeParams = new RelativeLayout.LayoutParams(120, 120);
         closeParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);

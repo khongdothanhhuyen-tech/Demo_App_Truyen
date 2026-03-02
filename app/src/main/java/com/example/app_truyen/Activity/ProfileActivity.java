@@ -250,11 +250,9 @@ public class ProfileActivity extends AppCompatActivity {
         tvExp = findViewById(R.id.tvExp);
         pbExp = findViewById(R.id.pbExp);
         btnFeedPet = findViewById(R.id.btnFeedPet);
-
         btnFeedPet.setOnClickListener(v -> feedPet());
         loadPetData();
     }
-
 
     private void updatePetUI() {
         // Tính toán cấp độ linh thú
@@ -278,7 +276,6 @@ public class ProfileActivity extends AppCompatActivity {
         pbExp.setProgress(currentExp);
         tvStreak.setText("🔥 Đang có chuỗi " + currentStreak + " ngày!");
 
-        // Kiểm tra xem hôm nay đã điểm danh (cho ăn) chưa
         String today = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
         if (today.equals(lastCheckIn)) {
             btnFeedPet.setEnabled(false);
@@ -306,7 +303,7 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    // 2. Hàm tải dữ liệu (Cập nhật logic reset điểm tại đây)
+    // 2. Hàm tải dữ liệu
     private void loadPetData() {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) return;
@@ -318,21 +315,17 @@ public class ProfileActivity extends AppCompatActivity {
                         currentStreak = doc.getLong("streak") != null ? doc.getLong("streak").intValue() : 0;
                         lastCheckIn = doc.getString("lastCheckIn") != null ? doc.getString("lastCheckIn") : "";
 
-                        // KIỂM TRA MẤT CHUỖI NGAY KHI VỪA MỞ PROFILE
                         String today = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
                         long daysDiff = getDaysDifference(lastCheckIn, today);
 
-                        // Nếu khoảng cách lớn hơn 1 ngày (bỏ lỡ điểm danh) -> Reset tất cả về 0
                         if (daysDiff > 1) {
                             currentStreak = 0;
                             currentExp = 0;
 
-                            // Cập nhật lại Firebase lập tức để đồng bộ
                             db.collection("TaiKhoan").document(user.getUid())
                                     .update("exp", 0, "streak", 0);
                         }
 
-                        // Gọi updatePetUI() sẽ tự động đổi linh thú về dạng Trứng vì EXP = 0
                         updatePetUI();
                     }
                 });
@@ -349,14 +342,12 @@ public class ProfileActivity extends AppCompatActivity {
             long daysDiff = getDaysDifference(lastCheckIn, today);
 
             if (daysDiff == 1) {
-                currentStreak++; // Đăng nhập liền mạch ngày hôm sau -> Cộng chuỗi
+                currentStreak++;
             } else {
-                // Nếu lần đầu chơi hoặc vừa bị reset ở trên -> Bấm cho ăn sẽ thành chuỗi 1 ngày
                 currentStreak = 1;
-                currentExp = 0; // Đảm bảo điểm cày lại từ đầu
+                currentExp = 0;
             }
-
-            currentExp += 10; // Nhận 10đ cho lần điểm danh này
+            currentExp += 10;
             lastCheckIn = today;
 
             db.collection("TaiKhoan").document(user.getUid())
