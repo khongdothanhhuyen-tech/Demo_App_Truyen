@@ -19,7 +19,9 @@ import com.example.app_truyen.Adapters.AdapterStoryVerti;
 import com.example.app_truyen.Models.Story;
 import com.example.app_truyen.R;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ public class HomeActivity extends AppCompatActivity {
     private NestedScrollView nestedScrollView;
     private AdapterBannerStory adapterBanner;
     private LinearLayout containerGenres;
+    private ListenerRegistration banListener;
 
     @Override
     protected void onPause() {
@@ -60,6 +63,39 @@ public class HomeActivity extends AppCompatActivity {
         ImageView imgForum = findViewById(R.id.imgForum);
         containerGenres = findViewById(R.id.containerGenres);
 
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            startActivity(new Intent(this, LoginMainActivity.class));
+            finish();
+            return;
+        }
+
+        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        banListener = FirebaseFirestore.getInstance()
+                .collection("TaiKhoan")
+                .document(uid)
+                .addSnapshotListener((snapshot, error) -> {
+
+                    if (snapshot != null && snapshot.exists()) {
+
+                        Boolean isBanned = snapshot.getBoolean("isBanned");
+
+                        if (isBanned != null && isBanned) {
+
+                            Toast.makeText(this,
+                                    "Tài khoản của bạn đã bị khóa!",
+                                    Toast.LENGTH_LONG).show();
+
+                            FirebaseAuth.getInstance().signOut();
+
+                            Intent intent = new Intent(this, LoginMainActivity.class);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            startActivity(intent);
+                            finish();
+                        }
+                    }
+                });
+
         imgSearch.setOnClickListener(v -> {
             startActivity(new Intent(HomeActivity.this, SearchActivity.class));
 
@@ -83,6 +119,14 @@ public class HomeActivity extends AppCompatActivity {
         setupBannerSlider();
         setupAllRecyclerViews();
         setupBottomNavigation();
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (banListener != null) {
+            banListener.remove();
+        }
     }
 
     private void setupAllRecyclerViews() {

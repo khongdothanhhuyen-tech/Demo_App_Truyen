@@ -99,14 +99,51 @@ public class LoginMainActivity extends AppCompatActivity {
             auth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener(LoginMainActivity.this, task -> {
                         if (task.isSuccessful()) {
+
                             FirebaseUser user = auth.getCurrentUser();
+
                             if (user != null) {
-                                checkRole(user.getUid());
+
+                                String uid = user.getUid();
+
+                                FirebaseFirestore.getInstance()
+                                        .collection("TaiKhoan")
+                                        .document(uid)
+                                        .get()
+                                        .addOnSuccessListener(documentSnapshot -> {
+
+                                            Boolean isBanned = documentSnapshot.getBoolean("isBanned");
+
+                                            if (isBanned != null && isBanned) {
+
+                                                Toast.makeText(LoginMainActivity.this,
+                                                        "Tài khoản của bạn đã bị khóa!",
+                                                        Toast.LENGTH_LONG).show();
+
+                                                auth.signOut(); // Đăng xuất ngay
+
+                                            } else {
+
+                                                // 👇 CHỈ khi không bị ban mới kiểm tra role
+                                                checkRole(uid);
+                                            }
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            Toast.makeText(LoginMainActivity.this,
+                                                    "Lỗi kiểm tra tài khoản!",
+                                                    Toast.LENGTH_SHORT).show();
+                                        });
+
                             } else {
-                                Toast.makeText(LoginMainActivity.this, "Lỗi, không tìm thấy user", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(LoginMainActivity.this,
+                                        "Lỗi, không tìm thấy user",
+                                        Toast.LENGTH_SHORT).show();
                             }
+
                         } else {
-                            Toast.makeText(LoginMainActivity.this, "Sai tài khoản hoặc mật khẩu!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(LoginMainActivity.this,
+                                    "Sai tài khoản hoặc mật khẩu!",
+                                    Toast.LENGTH_SHORT).show();
                         }
                     });
         });
