@@ -84,14 +84,21 @@ public class SignUpActivity extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             FirebaseUser user = auth.getCurrentUser();
                             if(user != null) {
-                                Map<String, Object> chiTietNguoiDung = new HashMap<>();
-                                chiTietNguoiDung.put("email", user.getEmail());
-                                chiTietNguoiDung.put("ngayTao", FieldValue.serverTimestamp());
-                                chiTietNguoiDung.put("role", "user");
+                                Map<String, Object> userMap = new HashMap<>();
+                                userMap.put("avatarUrl", "");
+                                userMap.put("email", user.getEmail());
+                                userMap.put("ngayTao",  FieldValue.serverTimestamp());
+                                userMap.put("role", "user");
+                                userMap.put("exp", 0);
+                                userMap.put("lastCheckIn", null);
+                                userMap.put("lastCommented", null);
+                                userMap.put("lastLiked", null);
+                                userMap.put("lastPosted", null);
+                                userMap.put("isBanned", false); // 👈 thêm dòng này
 
                                 String userId = user.getUid();
                                 db.collection("TaiKhoan").document(userId)
-                                        .set(chiTietNguoiDung)
+                                        .set(userMap)
                                         .addOnSuccessListener(aVoid -> {
                                             Toast.makeText(SignUpActivity.this, "Đăng Kí Thành Công!", Toast.LENGTH_SHORT).show();
 

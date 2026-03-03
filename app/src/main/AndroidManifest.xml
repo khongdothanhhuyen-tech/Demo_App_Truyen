@@ -104,7 +104,7 @@
             android:name=".Activity.CreatePostActivity"
             android:exported="false">
         </activity>
-
+        <activity android:name=".Activity.UserManagementActivity" />
 
 
 

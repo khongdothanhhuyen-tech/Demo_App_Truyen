@@ -13,6 +13,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.app_truyen.Adapters.AdapterStoryHori;
 import com.example.app_truyen.Models.Story;
 import com.example.app_truyen.R;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
@@ -27,12 +29,43 @@ public class AdminActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin);
+        /// /
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (currentUser == null) {
+            finish();
+            return;
+        }
+
+        FirebaseFirestore.getInstance()
+                .collection("TaiKhoan")
+                .document(currentUser.getUid())
+                .get()
+                .addOnSuccessListener(snapshot -> {
+
+                    String role = snapshot.getString("role");
+
+                    if (role == null || !role.equals("admin")) {
+                        Toast.makeText(this,
+                                "Bạn không có quyền truy cập",
+                                Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                });
+        /// /
 
         Button btnAddStory = findViewById(R.id.btnAddStory);
         Button btnAddCategory = findViewById(R.id.btnAddCategory);
         Button btnChat = findViewById(R.id.btnChat);
         Button btnForum = findViewById(R.id.btnForum);
         RecyclerView rvStory = findViewById(R.id.rvStory);
+
+        /// /
+        Button btnUserManagement = findViewById(R.id.btnUserManagement);
+
+        btnUserManagement.setOnClickListener(v -> {
+            startActivity(new Intent(this, UserManagementActivity.class));
+        });
 
         progressBar = findViewById(R.id.progressBar);
         db = FirebaseFirestore.getInstance();
